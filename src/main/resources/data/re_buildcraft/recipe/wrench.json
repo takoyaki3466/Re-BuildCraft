@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "I I",
+    " G ",
+    " I "
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "G": {
+      "item": "re_buildcraft:stone_gear"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:wrench",
+    "count": 1
+  }
+}

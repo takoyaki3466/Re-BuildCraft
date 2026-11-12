@@ -1,0 +1,14 @@
+{
+  "type": "re_buildcraft:assembly",
+  "ingredients": [
+    {
+      "item": "minecraft:redstone",
+      "count": 1
+    }
+  ],
+  "energy": 2000,
+  "result": {
+    "id": "re_buildcraft:redstone_chipset",
+    "count": 1
+  }
+}

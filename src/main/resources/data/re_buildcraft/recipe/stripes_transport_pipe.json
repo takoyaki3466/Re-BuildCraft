@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ABC"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:black_dye"
+    },
+    "B": {
+      "item": "minecraft:glass"
+    },
+    "C": {
+      "item": "minecraft:yellow_dye"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:stripes_transport_pipe",
+    "count": 8
+  }
+}

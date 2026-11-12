@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " I ",
+    "IGI",
+    " I "
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:gold_ingot"
+    },
+    "G": {
+      "item": "re_buildcraft:wooden_gear"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:gold_gear",
+    "count": 1
+  }
+}

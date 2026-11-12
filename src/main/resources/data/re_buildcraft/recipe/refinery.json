@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "RTR",
+    "TGT"
+  ],
+  "key": {
+    "R": {
+      "item": "minecraft:redstone_torch"
+    },
+    "T": {
+      "item": "re_buildcraft:tank"
+    },
+    "G": {
+      "item": "re_buildcraft:diamond_gear"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:refinery",
+    "count": 1
+  }
+}

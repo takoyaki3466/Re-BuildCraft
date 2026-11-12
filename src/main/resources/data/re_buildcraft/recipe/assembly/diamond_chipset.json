@@ -1,0 +1,18 @@
+{
+  "type": "re_buildcraft:assembly",
+  "ingredients": [
+    {
+      "item": "minecraft:redstone",
+      "count": 1
+    },
+    {
+      "item": "minecraft:diamond",
+      "count": 1
+    }
+  ],
+  "energy": 16000,
+  "result": {
+    "id": "re_buildcraft:diamond_chipset",
+    "count": 1
+  }
+}

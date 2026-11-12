@@ -1,0 +1,16 @@
+{
+  "values": {
+    "minecraft:lava": {
+      "power_per_cycle": 1,
+      "total_burning_time": 20000
+    },
+    "re_buildcraft:oil": {
+      "power_per_cycle": 2,
+      "total_burning_time": 10000
+    },
+    "re_buildcraft:fuel": {
+      "power_per_cycle": 5,
+      "total_burning_time": 50000
+    }
+  }
+}

@@ -1,0 +1,64 @@
+
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "pipe": "#pipe",
+    "particle": "#pipe"
+  },
+  "elements": [
+    {
+      "from": [4, 4, 4],
+      "to": [12, 12, 12],
+      "faces": {
+        "down": {"texture": "#pipe"},
+        "up": {"texture": "#pipe"},
+        "north": {"texture": "#pipe"},
+        "south": {"texture": "#pipe"},
+        "west": {"texture": "#pipe"},
+        "east": {"texture": "#pipe"}
+      }
+    },
+    {
+      "from": [4, 0, 4],
+      "to": [12, 4, 12],
+      "faces": {
+        "down": {"texture": "#pipe"},
+        "up": {"texture": "#pipe"},
+        "north": {"texture": "#pipe"},
+        "south": {"texture": "#pipe"},
+        "west": {"texture": "#pipe"},
+        "east": {"texture": "#pipe"}
+      }
+    },
+    {
+      "from": [4, 12, 4],
+      "to": [12, 16, 12],
+      "faces": {
+        "down": {"texture": "#pipe"},
+        "up": {"texture": "#pipe"},
+        "north": {"texture": "#pipe"},
+        "south": {"texture": "#pipe"},
+        "west": {"texture": "#pipe"},
+        "east": {"texture": "#pipe"}
+      }
+    }
+  ],
+  "display": {
+    "gui": {
+      "rotation": [30, 225, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.625, 0.625, 0.625]
+    },
+    "ground": {
+      "rotation": [0, 0, 0],
+      "translation": [0, 3, 0],
+      "scale": [0.25, 0.25, 0.25]
+    },
+    "fixed": {
+      "rotation": [0, 0, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.5, 0.5, 0.5]
+    }
+  }
+}

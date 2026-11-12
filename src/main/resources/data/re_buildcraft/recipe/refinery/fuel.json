@@ -1,0 +1,13 @@
+{
+  "type": "re_buildcraft:refinery",
+  "first": {
+    "fluid": "re_buildcraft:oil",
+    "amount": 1
+  },
+  "energy": 10,
+  "delay": 1,
+  "result": {
+    "id": "re_buildcraft:fuel",
+    "amount": 1
+  }
+}

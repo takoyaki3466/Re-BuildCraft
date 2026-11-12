@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ORO",
+    "ODO",
+    "OGO"
+  ],
+  "key": {
+    "O": {
+      "item": "minecraft:obsidian"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "D": {
+      "item": "minecraft:diamond"
+    },
+    "G": {
+      "item": "re_buildcraft:diamond_gear"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:assembly_table",
+    "count": 1
+  }
+}

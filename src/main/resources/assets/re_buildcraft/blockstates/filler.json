@@ -1,0 +1,148 @@
+{
+  "variants": {
+    "active=false,pattern=0": {
+      "model": "re_buildcraft:block/filler/p0_off"
+    },
+    "active=false,pattern=1": {
+      "model": "re_buildcraft:block/filler/p1_off"
+    },
+    "active=false,pattern=2": {
+      "model": "re_buildcraft:block/filler/p2_off"
+    },
+    "active=false,pattern=3": {
+      "model": "re_buildcraft:block/filler/p3_off"
+    },
+    "active=false,pattern=4": {
+      "model": "re_buildcraft:block/filler/p4_off"
+    },
+    "active=false,pattern=5": {
+      "model": "re_buildcraft:block/filler/p5_off"
+    },
+    "active=false,pattern=6": {
+      "model": "re_buildcraft:block/filler/p6_off"
+    },
+    "active=false,pattern=7": {
+      "model": "re_buildcraft:block/filler/p7_off"
+    },
+    "active=false,pattern=8": {
+      "model": "re_buildcraft:block/filler/p8_off"
+    },
+    "active=false,pattern=9": {
+      "model": "re_buildcraft:block/filler/p9_off"
+    },
+    "active=false,pattern=10": {
+      "model": "re_buildcraft:block/filler/p10_off"
+    },
+    "active=false,pattern=11": {
+      "model": "re_buildcraft:block/filler/p11_off"
+    },
+    "active=false,pattern=12": {
+      "model": "re_buildcraft:block/filler/p12_off"
+    },
+    "active=false,pattern=13": {
+      "model": "re_buildcraft:block/filler/p13_off"
+    },
+    "active=false,pattern=14": {
+      "model": "re_buildcraft:block/filler/p14_off"
+    },
+    "active=false,pattern=15": {
+      "model": "re_buildcraft:block/filler/p15_off"
+    },
+    "active=false,pattern=16": {
+      "model": "re_buildcraft:block/filler/p16_off"
+    },
+    "active=false,pattern=17": {
+      "model": "re_buildcraft:block/filler/p17_off"
+    },
+    "active=false,pattern=18": {
+      "model": "re_buildcraft:block/filler/p18_off"
+    },
+    "active=false,pattern=19": {
+      "model": "re_buildcraft:block/filler/p19_off"
+    },
+    "active=false,pattern=20": {
+      "model": "re_buildcraft:block/filler/p20_off"
+    },
+    "active=false,pattern=21": {
+      "model": "re_buildcraft:block/filler/p21_off"
+    },
+    "active=false,pattern=22": {
+      "model": "re_buildcraft:block/filler/p22_off"
+    },
+    "active=false,pattern=23": {
+      "model": "re_buildcraft:block/filler/p23_off"
+    },
+    "active=true,pattern=0": {
+      "model": "re_buildcraft:block/filler/p0_on"
+    },
+    "active=true,pattern=1": {
+      "model": "re_buildcraft:block/filler/p1_on"
+    },
+    "active=true,pattern=2": {
+      "model": "re_buildcraft:block/filler/p2_on"
+    },
+    "active=true,pattern=3": {
+      "model": "re_buildcraft:block/filler/p3_on"
+    },
+    "active=true,pattern=4": {
+      "model": "re_buildcraft:block/filler/p4_on"
+    },
+    "active=true,pattern=5": {
+      "model": "re_buildcraft:block/filler/p5_on"
+    },
+    "active=true,pattern=6": {
+      "model": "re_buildcraft:block/filler/p6_on"
+    },
+    "active=true,pattern=7": {
+      "model": "re_buildcraft:block/filler/p7_on"
+    },
+    "active=true,pattern=8": {
+      "model": "re_buildcraft:block/filler/p8_on"
+    },
+    "active=true,pattern=9": {
+      "model": "re_buildcraft:block/filler/p9_on"
+    },
+    "active=true,pattern=10": {
+      "model": "re_buildcraft:block/filler/p10_on"
+    },
+    "active=true,pattern=11": {
+      "model": "re_buildcraft:block/filler/p11_on"
+    },
+    "active=true,pattern=12": {
+      "model": "re_buildcraft:block/filler/p12_on"
+    },
+    "active=true,pattern=13": {
+      "model": "re_buildcraft:block/filler/p13_on"
+    },
+    "active=true,pattern=14": {
+      "model": "re_buildcraft:block/filler/p14_on"
+    },
+    "active=true,pattern=15": {
+      "model": "re_buildcraft:block/filler/p15_on"
+    },
+    "active=true,pattern=16": {
+      "model": "re_buildcraft:block/filler/p16_on"
+    },
+    "active=true,pattern=17": {
+      "model": "re_buildcraft:block/filler/p17_on"
+    },
+    "active=true,pattern=18": {
+      "model": "re_buildcraft:block/filler/p18_on"
+    },
+    "active=true,pattern=19": {
+      "model": "re_buildcraft:block/filler/p19_on"
+    },
+    "active=true,pattern=20": {
+      "model": "re_buildcraft:block/filler/p20_on"
+    },
+    "active=true,pattern=21": {
+      "model": "re_buildcraft:block/filler/p21_on"
+    },
+    "active=true,pattern=22": {
+      "model": "re_buildcraft:block/filler/p22_on"
+    },
+    "active=true,pattern=23": {
+      "model": "re_buildcraft:block/filler/p23_on"
+    }
+  }
+}

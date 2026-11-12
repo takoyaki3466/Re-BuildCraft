@@ -1,0 +1,6 @@
+{
+  "parent": "re_buildcraft:block/pipe_arm",
+  "textures": {
+    "pipe": "re_buildcraft:block/pipe/stone_waterproof_pipe"
+  }
+}

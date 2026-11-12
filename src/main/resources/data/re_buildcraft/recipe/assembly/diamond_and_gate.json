@@ -1,0 +1,30 @@
+{
+  "type": "re_buildcraft:assembly",
+  "ingredients": [
+    {
+      "item": "re_buildcraft:diamond_chipset",
+      "count": 1
+    },
+    {
+      "item": "re_buildcraft:red_pipe_wire",
+      "count": 1
+    },
+    {
+      "item": "re_buildcraft:blue_pipe_wire",
+      "count": 1
+    },
+    {
+      "item": "re_buildcraft:green_pipe_wire",
+      "count": 1
+    },
+    {
+      "item": "re_buildcraft:yellow_pipe_wire",
+      "count": 1
+    }
+  ],
+  "energy": 80000,
+  "result": {
+    "id": "re_buildcraft:diamond_and_gate",
+    "count": 1
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "variants": {
+    "facing=up,origin=false": {
+      "model": "re_buildcraft:block/marker"
+    },
+    "facing=up,origin=true": {
+      "model": "re_buildcraft:block/marker_origin"
+    },
+    "facing=down,origin=false": {
+      "model": "re_buildcraft:block/marker",
+      "x": 180
+    },
+    "facing=down,origin=true": {
+      "model": "re_buildcraft:block/marker_origin",
+      "x": 180
+    },
+    "facing=north,origin=false": {
+      "model": "re_buildcraft:block/marker",
+      "x": 90
+    },
+    "facing=north,origin=true": {
+      "model": "re_buildcraft:block/marker_origin",
+      "x": 90
+    },
+    "facing=south,origin=false": {
+      "model": "re_buildcraft:block/marker",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,origin=true": {
+      "model": "re_buildcraft:block/marker_origin",
+      "x": 90,
+      "y": 180
+    },
+    "facing=east,origin=false": {
+      "model": "re_buildcraft:block/marker",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,origin=true": {
+      "model": "re_buildcraft:block/marker_origin",
+      "x": 90,
+      "y": 90
+    },
+    "facing=west,origin=false": {
+      "model": "re_buildcraft:block/marker",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,origin=true": {
+      "model": "re_buildcraft:block/marker_origin",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

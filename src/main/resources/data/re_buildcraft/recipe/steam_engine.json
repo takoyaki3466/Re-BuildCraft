@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "www",
+    " g ",
+    "GpG"
+  ],
+  "key": {
+    "w": {
+      "item": "minecraft:cobblestone"
+    },
+    "g": {
+      "item": "minecraft:glass"
+    },
+    "G": {
+      "item": "re_buildcraft:stone_gear"
+    },
+    "p": {
+      "item": "minecraft:piston"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:steam_engine",
+    "count": 1
+  }
+}

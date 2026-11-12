@@ -1,0 +1,8 @@
+{
+  "parent": "re_buildcraft:block/laser_template",
+  "textures": {
+    "front": "re_buildcraft:block/laser_front",
+    "back": "re_buildcraft:block/laser_back",
+    "side": "re_buildcraft:block/laser_side"
+  }
+}

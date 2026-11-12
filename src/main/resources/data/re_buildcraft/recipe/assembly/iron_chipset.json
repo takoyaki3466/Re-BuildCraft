@@ -1,0 +1,18 @@
+{
+  "type": "re_buildcraft:assembly",
+  "ingredients": [
+    {
+      "item": "minecraft:redstone",
+      "count": 1
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 1
+    }
+  ],
+  "energy": 4000,
+  "result": {
+    "id": "re_buildcraft:iron_chipset",
+    "count": 1
+  }
+}

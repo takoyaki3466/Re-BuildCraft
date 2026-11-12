@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "www",
+    " g ",
+    "GpG"
+  ],
+  "key": {
+    "w": {
+      "tag": "minecraft:planks"
+    },
+    "g": {
+      "item": "minecraft:glass"
+    },
+    "G": {
+      "item": "re_buildcraft:wooden_gear"
+    },
+    "p": {
+      "item": "minecraft:piston"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:redstone_engine",
+    "count": 1
+  }
+}

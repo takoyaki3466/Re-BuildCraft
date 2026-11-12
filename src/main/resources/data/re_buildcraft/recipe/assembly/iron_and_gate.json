@@ -1,0 +1,18 @@
+{
+  "type": "re_buildcraft:assembly",
+  "ingredients": [
+    {
+      "item": "re_buildcraft:iron_chipset",
+      "count": 1
+    },
+    {
+      "item": "re_buildcraft:red_pipe_wire",
+      "count": 1
+    }
+  ],
+  "energy": 20000,
+  "result": {
+    "id": "re_buildcraft:iron_and_gate",
+    "count": 1
+  }
+}

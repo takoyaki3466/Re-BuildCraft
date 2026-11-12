@@ -1,0 +1,22 @@
+{
+  "type": "re_buildcraft:assembly",
+  "ingredients": [
+    {
+      "item": "minecraft:green_dye",
+      "count": 1
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 1
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 1
+    }
+  ],
+  "energy": 500,
+  "result": {
+    "id": "re_buildcraft:green_pipe_wire",
+    "count": 8
+  }
+}

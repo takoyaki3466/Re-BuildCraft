@@ -1,0 +1,22 @@
+{
+  "type": "re_buildcraft:assembly",
+  "ingredients": [
+    {
+      "item": "re_buildcraft:gold_chipset",
+      "count": 1
+    },
+    {
+      "item": "re_buildcraft:red_pipe_wire",
+      "count": 1
+    },
+    {
+      "item": "re_buildcraft:blue_pipe_wire",
+      "count": 1
+    }
+  ],
+  "energy": 40000,
+  "result": {
+    "id": "re_buildcraft:gold_or_gate",
+    "count": 1
+  }
+}

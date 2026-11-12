@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ipi",
+    "igi",
+    "iPi"
+  ],
+  "key": {
+    "p": {
+      "item": "minecraft:redstone"
+    },
+    "i": {
+      "item": "minecraft:iron_ingot"
+    },
+    "g": {
+      "item": "re_buildcraft:iron_gear"
+    },
+    "P": {
+      "item": "minecraft:iron_pickaxe"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:mining_well",
+    "count": 1
+  }
+}

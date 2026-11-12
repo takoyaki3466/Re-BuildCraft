@@ -1,0 +1,14 @@
+{
+  "type": "re_buildcraft:assembly",
+  "ingredients": [
+    {
+      "item": "re_buildcraft:redstone_chipset",
+      "count": 1
+    }
+  ],
+  "energy": 10000,
+  "result": {
+    "id": "re_buildcraft:gate",
+    "count": 1
+  }
+}

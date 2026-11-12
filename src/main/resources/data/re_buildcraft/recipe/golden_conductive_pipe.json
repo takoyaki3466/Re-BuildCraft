@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "A",
+    "B"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:redstone"
+    },
+    "B": {
+      "item": "re_buildcraft:golden_transport_pipe"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:golden_conductive_pipe",
+    "count": 1
+  }
+}

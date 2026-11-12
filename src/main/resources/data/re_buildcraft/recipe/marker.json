@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "l",
+    "r"
+  ],
+  "key": {
+    "l": {
+      "item": "minecraft:lapis_lazuli"
+    },
+    "r": {
+      "item": "minecraft:redstone_torch"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:marker",
+    "count": 1
+  }
+}

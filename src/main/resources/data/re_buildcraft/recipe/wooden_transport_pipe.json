@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ABC"
+  ],
+  "key": {
+    "A": {
+      "tag": "minecraft:planks"
+    },
+    "B": {
+      "item": "minecraft:glass"
+    },
+    "C": {
+      "tag": "minecraft:planks"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:wooden_transport_pipe",
+    "count": 8
+  }
+}

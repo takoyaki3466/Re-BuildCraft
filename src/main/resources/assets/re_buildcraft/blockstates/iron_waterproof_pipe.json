@@ -1,0 +1,127 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "re_buildcraft:block/pipe/iron_waterproof_pipe_core"
+      }
+    },
+    {
+      "when": {
+        "down": "true",
+        "special": "none|up|north|south|west|east"
+      },
+      "apply": {
+        "model": "re_buildcraft:block/pipe/iron_waterproof_pipe_arm",
+        "x": 90
+      }
+    },
+    {
+      "when": {
+        "down": "true",
+        "special": "down"
+      },
+      "apply": {
+        "model": "re_buildcraft:block/pipe/iron_waterproof_pipe_arm_special",
+        "x": 90
+      }
+    },
+    {
+      "when": {
+        "up": "true",
+        "special": "none|down|north|south|west|east"
+      },
+      "apply": {
+        "model": "re_buildcraft:block/pipe/iron_waterproof_pipe_arm",
+        "x": 270
+      }
+    },
+    {
+      "when": {
+        "up": "true",
+        "special": "up"
+      },
+      "apply": {
+        "model": "re_buildcraft:block/pipe/iron_waterproof_pipe_arm_special",
+        "x": 270
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "special": "none|down|up|south|west|east"
+      },
+      "apply": {
+        "model": "re_buildcraft:block/pipe/iron_waterproof_pipe_arm"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "special": "north"
+      },
+      "apply": {
+        "model": "re_buildcraft:block/pipe/iron_waterproof_pipe_arm_special"
+      }
+    },
+    {
+      "when": {
+        "south": "true",
+        "special": "none|down|up|north|west|east"
+      },
+      "apply": {
+        "model": "re_buildcraft:block/pipe/iron_waterproof_pipe_arm",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "south": "true",
+        "special": "south"
+      },
+      "apply": {
+        "model": "re_buildcraft:block/pipe/iron_waterproof_pipe_arm_special",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "west": "true",
+        "special": "none|down|up|north|south|east"
+      },
+      "apply": {
+        "model": "re_buildcraft:block/pipe/iron_waterproof_pipe_arm",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "west": "true",
+        "special": "west"
+      },
+      "apply": {
+        "model": "re_buildcraft:block/pipe/iron_waterproof_pipe_arm_special",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "east": "true",
+        "special": "none|down|up|north|south|west"
+      },
+      "apply": {
+        "model": "re_buildcraft:block/pipe/iron_waterproof_pipe_arm",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "east": "true",
+        "special": "east"
+      },
+      "apply": {
+        "model": "re_buildcraft:block/pipe/iron_waterproof_pipe_arm_special",
+        "y": 90
+      }
+    }
+  ]
+}

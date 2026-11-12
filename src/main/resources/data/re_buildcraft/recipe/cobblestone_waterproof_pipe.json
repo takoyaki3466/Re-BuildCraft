@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "A",
+    "B"
+  ],
+  "key": {
+    "A": {
+      "item": "re_buildcraft:pipe_waterproof"
+    },
+    "B": {
+      "item": "re_buildcraft:cobblestone_transport_pipe"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:cobblestone_waterproof_pipe",
+    "count": 1
+  }
+}

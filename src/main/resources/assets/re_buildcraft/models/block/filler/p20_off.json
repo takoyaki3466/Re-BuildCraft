@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "re_buildcraft:block/filler/top_off",
+    "bottom": "re_buildcraft:block/filler/top_off",
+    "side": "re_buildcraft:block/filler/pattern_underground_fill"
+  }
+}

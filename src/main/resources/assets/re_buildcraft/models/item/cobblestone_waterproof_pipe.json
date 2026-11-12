@@ -1,0 +1,6 @@
+{
+  "parent": "re_buildcraft:block/pipe/item_pipe_core",
+  "textures": {
+    "pipe": "re_buildcraft:block/pipe/cobblestone_waterproof_pipe"
+  }
+}

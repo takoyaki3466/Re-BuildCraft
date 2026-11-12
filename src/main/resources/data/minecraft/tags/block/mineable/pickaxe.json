@@ -1,0 +1,13 @@
+{
+  "values": [
+    "re_buildcraft:redstone_engine",
+    "re_buildcraft:steam_engine",
+    "re_buildcraft:combustion_engine",
+    "re_buildcraft:mining_well",
+    "re_buildcraft:pump",
+    "re_buildcraft:laser",
+    "re_buildcraft:assembly_table",
+    "re_buildcraft:quarry",
+    "re_buildcraft:filler"
+  ]
+}
