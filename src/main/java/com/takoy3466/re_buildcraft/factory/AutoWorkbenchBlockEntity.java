@@ -3,7 +3,9 @@ package com.takoy3466.re_buildcraft.factory;
 import com.takoy3466.re_buildcraft.api.util.InventoryUtils;
 import com.takoy3466.re_buildcraft.registry.ModBlockEntities;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -39,6 +41,7 @@ import org.jetbrains.annotations.Nullable;
  *       隣接するインベントリ (上・下・北・南・西・東の順) から 1 個ずつ取ってくる (旧 extractItem(doRemove, false))。</li>
  *   <li>GUI の完成品枠から取ると、見本の最後の 1 個も材料に使う (旧 SlotAutoCrafting → extractItem(true, true))。</li>
  *   <li>バケツなどのクラフト後に残るアイテムは、材料を取ったインベントリへ戻し、入らなければ隣接パイプへ流すか上へ放出する。</li>
+ *   <li>材料はすべてそろうことを確かめてから取り出す。足りなければどのインベントリにも触れない ({@link #craft})。</li>
  * </ul>
  * 旧 BCAPI の「耐久値を消費するクラフト素材」は、1.21.1 ではレシピの残りアイテム ({@code getRemainingItems}) で表される。
  */
@@ -94,8 +97,14 @@ public class AutoWorkbenchBlockEntity extends BlockEntity implements MenuProvide
 
     /**
      * 1 回分クラフトする (旧 extractItem)。
+     * <p>
+     * 先にレシピと材料の出どころ (グリッドのスロット・隣接インベントリのスロット) をすべて決め、何も動かさずに確かめてから
+     * 実際に取り出す。材料が 1 つでも足りない場合・レシピが無い場合は、どのインベントリにも触れずに {@link ItemStack#EMPTY} を返す。
+     * 旧実装 (およびこの移行版の以前の実装) は「1 個ずつ取り出し、足りなければ戻す」方式で、戻し先が搬入を受け付けない
+     * インベントリ (ProjectE のコンデンサーの出力枠など、取り出し専用のもの) だった場合に、戻せなかった材料が
+     * 別の隣接インベントリへ入ってしまっていた。
      *
-     * @param doRemove      false なら材料を戻し、作れる物だけを返す
+     * @param doRemove      false なら何も動かさず、作れる物だけを返す
      * @param useLastItem   true なら各スロットの最後の 1 個も材料に使う (GUI から取る場合)
      * @return 完成品。作れなければ {@link ItemStack#EMPTY}
      */
@@ -103,38 +112,118 @@ public class AutoWorkbenchBlockEntity extends BlockEntity implements MenuProvide
         if (level == null) {
             return ItemStack.EMPTY;
         }
-        int keep = useLastItem ? 0 : 1;
-        List<Taken> taken = new ArrayList<>(GRID_SIZE);
+        // 材料は見本と同じアイテム (同じコンポーネント) なので、レシピは見本 1 個ずつの並びで決まる。
         List<ItemStack> items = new ArrayList<>(GRID_SIZE);
         for (int slot = 0; slot < GRID_SIZE; slot++) {
             ItemStack template = grid.getStackInSlot(slot);
-            if (template.isEmpty()) {
-                items.add(ItemStack.EMPTY);
-                continue;
-            }
-            Taken take = template.getCount() <= keep ? takeNearby(template) : new Taken(grid, slot, grid.extractItem(slot, 1, false));
-            if (take == null) {
-                giveBack(taken);
-                return ItemStack.EMPTY;
-            }
-            taken.add(take);
-            items.add(take.item());
+            items.add(template.isEmpty() ? ItemStack.EMPTY : template.copyWithCount(1));
         }
         CraftingInput.Positioned positioned = CraftingInput.ofPositioned(GRID_WIDTH, GRID_WIDTH, items);
         CraftingInput input = positioned.input();
         Optional<RecipeHolder<CraftingRecipe>> recipe = findRecipe(level, input);
-        if (recipe.isEmpty() || !doRemove) {
-            giveBack(taken);
-            return recipe.map(holder -> holder.value().assemble(input, level.registryAccess())).orElse(ItemStack.EMPTY);
+        if (recipe.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        Source[] sources = planSources(useLastItem ? 0 : 1);
+        if (sources == null) {
+            return ItemStack.EMPTY;
         }
         ItemStack result = recipe.get().value().assemble(input, level.registryAccess());
-        returnRemainders(recipe.get().value().getRemainingItems(input), positioned, items, taken);
+        if (!doRemove) {
+            return result;
+        }
+        Taken[] taken = takeAll(sources);
+        if (taken == null) {
+            return ItemStack.EMPTY;
+        }
+        returnRemainders(recipe.get().value().getRemainingItems(input), positioned, taken);
         return result;
     }
 
+    /**
+     * 各見本スロットの材料の出どころを決める (何も動かさない)。
+     * 見本が {@code keep} 個より多ければそのスロット自身から、そうでなければ隣接インベントリから取る (旧 getNearbyItem)。
+     * 同じ隣接スロットを複数の材料に使う場合は、その合計個数を取り出せるかを試して確かめる。
+     *
+     * @return 見本スロットごとの出どころ (空のスロットは null)。足りない材料があれば null
+     */
+    @Nullable
+    private Source[] planSources(int keep) {
+        Source[] sources = new Source[GRID_SIZE];
+        Map<Source, Integer> reserved = new HashMap<>();
+        for (int slot = 0; slot < GRID_SIZE; slot++) {
+            ItemStack template = grid.getStackInSlot(slot);
+            if (template.isEmpty()) {
+                continue;
+            }
+            Source source = template.getCount() > keep ? new Source(null, slot) : findNearby(template, reserved);
+            if (source == null) {
+                return null;
+            }
+            reserved.merge(source, 1, Integer::sum);
+            sources[slot] = source;
+        }
+        return sources;
+    }
+
+    /** 隣接するインベントリから、見本と同じアイテムをもう 1 個取り出せるスロットを探す (旧 getNearbyItem)。 */
+    @Nullable
+    private Source findNearby(ItemStack template, Map<Source, Integer> reserved) {
+        for (Direction direction : NEARBY_ORDER) {
+            IItemHandler handler = nearbyHandler(direction);
+            if (handler == null) {
+                continue;
+            }
+            for (int slot = 0; slot < handler.getSlots(); slot++) {
+                if (!ItemStack.isSameItemSameComponents(handler.getStackInSlot(slot), template)) {
+                    continue;
+                }
+                Source candidate = new Source(direction, slot);
+                int needed = reserved.getOrDefault(candidate, 0) + 1;
+                ItemStack simulated = handler.extractItem(slot, needed, true);
+                if (simulated.getCount() >= needed && ItemStack.isSameItemSameComponents(simulated, template)) {
+                    return candidate;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** 隣接インベントリ (自動作業台どうしは除く)。 */
+    @Nullable
+    private IItemHandler nearbyHandler(Direction direction) {
+        BlockPos neighbor = worldPosition.relative(direction);
+        if (level.getBlockEntity(neighbor) instanceof AutoWorkbenchBlockEntity) {
+            return null;
+        }
+        return level.getCapability(Capabilities.ItemHandler.BLOCK, neighbor, direction.getOpposite());
+    }
+
+    /**
+     * 決めた出どころから材料を 1 個ずつ取り出す。直前に確かめているため通常は失敗しないが、
+     * 取り出せなかった場合はそれまでに取り出した材料を戻して null を返す。
+     */
+    @Nullable
+    private Taken[] takeAll(Source[] sources) {
+        Taken[] taken = new Taken[GRID_SIZE];
+        for (int slot = 0; slot < GRID_SIZE; slot++) {
+            Source source = sources[slot];
+            if (source == null) {
+                continue;
+            }
+            IItemHandler handler = source.side() == null ? grid : nearbyHandler(source.side());
+            ItemStack item = handler == null ? ItemStack.EMPTY : handler.extractItem(source.slot(), 1, false);
+            if (item.isEmpty()) {
+                giveBack(taken);
+                return null;
+            }
+            taken[slot] = new Taken(handler, source.slot(), item, slot);
+        }
+        return taken;
+    }
+
     /** レシピの残りアイテム (空バケツなど) を、元の材料を取った場所へ戻す。 */
-    private void returnRemainders(NonNullList<ItemStack> remainders, CraftingInput.Positioned positioned,
-                                  List<ItemStack> items, List<Taken> taken) {
+    private void returnRemainders(NonNullList<ItemStack> remainders, CraftingInput.Positioned positioned, Taken[] taken) {
         CraftingInput input = positioned.input();
         for (int row = 0; row < input.height(); row++) {
             for (int column = 0; column < input.width(); column++) {
@@ -142,8 +231,7 @@ public class AutoWorkbenchBlockEntity extends BlockEntity implements MenuProvide
                 if (remainder.isEmpty()) {
                     continue;
                 }
-                int gridSlot = column + positioned.left() + (row + positioned.top()) * GRID_WIDTH;
-                Taken source = sourceOf(items.get(gridSlot), taken);
+                Taken source = taken[column + positioned.left() + (row + positioned.top()) * GRID_WIDTH];
                 ItemStack rest = source == null ? remainder : source.handler().insertItem(source.slot(), remainder, false);
                 if (!rest.isEmpty() && !InventoryUtils.insertIntoAdjacentPipe(level, worldPosition, rest)) {
                     InventoryUtils.ejectUpward(level, worldPosition, rest);
@@ -152,53 +240,34 @@ public class AutoWorkbenchBlockEntity extends BlockEntity implements MenuProvide
         }
     }
 
-    @Nullable
-    private static Taken sourceOf(ItemStack item, List<Taken> taken) {
+    /**
+     * 取り出した材料を元の場所へ戻す (旧 resetPointers)。元の場所が受け付けない場合は、その材料の見本スロットへ入れ、
+     * それも入らなければ上へ放出する。無関係な隣接インベントリへは入れない。
+     */
+    private void giveBack(Taken[] taken) {
         for (Taken take : taken) {
-            if (take.item() == item) {
-                return take;
-            }
-        }
-        return null;
-    }
-
-    /** 隣接するインベントリから、見本と同じアイテムを 1 個取ってくる (旧 getNearbyItem)。 */
-    @Nullable
-    private Taken takeNearby(ItemStack template) {
-        for (Direction direction : NEARBY_ORDER) {
-            BlockPos neighbor = worldPosition.relative(direction);
-            if (level.getBlockEntity(neighbor) instanceof AutoWorkbenchBlockEntity) {
+            if (take == null) {
                 continue;
             }
-            IItemHandler handler = level.getCapability(Capabilities.ItemHandler.BLOCK, neighbor, direction.getOpposite());
-            if (handler == null) {
-                continue;
-            }
-            for (int slot = 0; slot < handler.getSlots(); slot++) {
-                if (ItemStack.isSameItemSameComponents(handler.getStackInSlot(slot), template)) {
-                    ItemStack item = handler.extractItem(slot, 1, false);
-                    if (!item.isEmpty()) {
-                        return new Taken(handler, slot, item);
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /** 取ったアイテムを元の場所へ戻す (旧 resetPointers)。 */
-    private void giveBack(List<Taken> taken) {
-        for (Taken take : taken) {
             ItemStack rest = take.handler().insertItem(take.slot(), take.item(), false);
             if (!rest.isEmpty()) {
-                rest = InventoryUtils.insertIntoAdjacentInventories(level, worldPosition, rest);
-                InventoryUtils.ejectUpward(level, worldPosition, rest);
+                rest = grid.insertItem(take.gridSlot(), rest, false);
             }
+            InventoryUtils.ejectUpward(level, worldPosition, rest);
         }
     }
 
-    /** 取り出したアイテムとその出どころ。 */
-    private record Taken(IItemHandler handler, int slot, ItemStack item) {
+    /**
+     * 材料の出どころ。
+     *
+     * @param side 隣接インベントリの方向。グリッド自身のスロットなら null
+     * @param slot そのインベントリ内のスロット
+     */
+    private record Source(@Nullable Direction side, int slot) {
+    }
+
+    /** 取り出した材料と、その出どころ・使った見本スロット。 */
+    private record Taken(IItemHandler handler, int slot, ItemStack item, int gridSlot) {
     }
 
     // ---- 搬入規則 -------------------------------------------------------------
@@ -277,11 +346,12 @@ public class AutoWorkbenchBlockEntity extends BlockEntity implements MenuProvide
                 return ItemStack.EMPTY;
             }
             // 返す量は amount を超えられないため、完成品の個数が amount を超える場合は作らない。
-            ItemStack preview = previewResult();
-            if (preview.isEmpty() || preview.getCount() > amount) {
+            // 試しに取り出す場合も、材料が実際にそろうか (隣接インベントリを含む) まで確かめる (旧 extractItem(false, ...))。
+            ItemStack result = craft(false, false);
+            if (result.isEmpty() || result.getCount() > amount) {
                 return ItemStack.EMPTY;
             }
-            return simulate ? preview : craft(true, false);
+            return simulate ? result : craft(true, false);
         }
 
         @Override

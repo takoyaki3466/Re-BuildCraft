@@ -20,8 +20,10 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -38,7 +40,18 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity> {
     private static final float PIXEL = 1.0F / 16.0F;
     private static final float CORE_MIN = 4 * PIXEL;
     private static final float CORE_MAX = 12 * PIXEL;
-    private static final float ITEM_SCALE = 0.5F;
+    /**
+     * パイプ内のアイテムの描画の大きさ (旧 RenderPipe.doRenderItem)。立体のモデル (ブロックなど) は 0.25、
+     * 平らなアイテムは 0.5 ブロック。どちらもパイプの内径 (芯の幅 0.5) に収まる。
+     * 以前は表示用の変形 GROUND (それ自体がアイテム 0.5 倍・ブロック 0.25 倍に縮める) にさらに 0.5 倍を掛けており、旧版の半分の大きさだった。
+     */
+    private static final float BLOCK_ITEM_SIZE = 0.25F;
+    private static final float FLAT_ITEM_SIZE = 0.5F;
+    /**
+     * 論理上のアイテムの位置はパイプの「床」(ブロックの下から {@link ItemTransport#PIPE_FLOOR}) にあり、旧版は描画時に
+     * その分を持ち上げてパイプの中心へ描いていた。床から中心までの高さ。
+     */
+    private static final double ITEM_CENTER_ABOVE_FLOOR = 0.5 - ItemTransport.PIPE_FLOOR;
     private static final float FLUID_MARGIN = 0.01F;
     private static final float POWER_MIN_HALF_WIDTH = 0.5F * PIXEL;
     private static final float POWER_MAX_HALF_WIDTH = 3.0F * PIXEL;
@@ -88,11 +101,16 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity> {
             float step = item.speed() * partialTick;
             poseStack.pushPose();
             poseStack.translate(position.x - pos.getX() + heading.getStepX() * step,
-                    position.y - pos.getY() + heading.getStepY() * step,
+                    position.y - pos.getY() + ITEM_CENTER_ABOVE_FLOOR + heading.getStepY() * step,
                     position.z - pos.getZ() + heading.getStepZ() * step);
-            poseStack.scale(ITEM_SCALE, ITEM_SCALE, ITEM_SCALE);
-            Minecraft.getInstance().getItemRenderer().renderStatic(item.stack(), ItemDisplayContext.GROUND, packedLight,
-                    OverlayTexture.NO_OVERLAY, poseStack, buffers, pipe.getLevel(), item.id());
+            // 表示用の変形を使わず (NONE: モデルの中心が原点に来る)、大きさをここで決める。GROUND の「地面から浮かせる」移動や
+            // 縮小が重ならないようにするため。
+            ItemRenderer renderer = Minecraft.getInstance().getItemRenderer();
+            BakedModel model = renderer.getModel(item.stack(), pipe.getLevel(), null, item.id());
+            float size = model.isGui3d() ? BLOCK_ITEM_SIZE : FLAT_ITEM_SIZE;
+            poseStack.scale(size, size, size);
+            renderer.render(item.stack(), ItemDisplayContext.NONE, false, poseStack, buffers, packedLight,
+                    OverlayTexture.NO_OVERLAY, model);
             poseStack.popPose();
         }
     }

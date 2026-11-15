@@ -12,6 +12,11 @@ import net.neoforged.neoforge.items.IItemHandler;
 /**
  * 木の輸送パイプ。MJ を受けると、取り出し元のインベントリから先頭のアイテムを MJ の量だけ (1 MJ = 1 個) 取り出す。
  * 元実装: {@code buildcraft.transport.pipes.PipeItemsWood}。
+ * <p>
+ * 旧実装は自動作業台などの特殊インベントリ ({@code ISpecialInventory}) から、蓄積量に関係なく完成品 1 回分を
+ * まとめて取り出していた。1.21.1 ではどのインベントリも {@code IItemHandler} で扱うため、「指定した個数では取り出せず、
+ * まとめてなら取り出せる枠」を特殊インベントリと同じ扱いにする (蓄積がアイテム数に足りなくても 1 回分を取り出す)。
+ * 蓄積は毎 tick 失われる (旧 configurePowerPerdition(64, 1)) ため、この扱いが無いと低出力のエンジンでは複数個のクラフト結果を取り出せない。
  */
 public class WoodItemExtractionBehavior implements PipeBehavior {
     private static final int MAX_ENERGY = 64;
@@ -48,9 +53,20 @@ public class WoodItemExtractionBehavior implements PipeBehavior {
             if (available.isEmpty()) {
                 continue;
             }
-            int amount = (int) powerProvider.useEnergy(1.0F, available.getCount(), true);
-            ItemStack extracted = inventory.extractItem(slot, amount, false);
+            // 1 MJ = 1 個。蓄積が 1 MJ 未満なら取り出さない (旧 useEnergy(1, n) が 0 を返す場合)。
+            int affordable = (int) Math.min(available.getCount(), powerProvider.getEnergyStored());
+            if (affordable < 1) {
+                return;
+            }
+            ItemStack extracted = inventory.extractItem(slot, affordable, false);
+            if (extracted.isEmpty() && affordable < available.getCount()) {
+                // 一部だけでは渡せず、まとめてしか取り出せない枠 (自動作業台の完成品など。旧 ISpecialInventory)。
+                // 旧実装は特殊インベントリから蓄積量に関係なく 1 回分をまとめて取り出していたため、それに合わせる。
+                extracted = inventory.extractItem(slot, available.getCount(), false);
+            }
             if (!extracted.isEmpty()) {
+                // 取り出せた分だけ消費する (取り出しに失敗した場合は消費しない)。
+                powerProvider.useEnergy(1.0F, extracted.getCount(), true);
                 items.injectFromSide(extracted, source.getOpposite(), EXTRACT_SPEED);
             }
             return;

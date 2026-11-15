@@ -219,6 +219,11 @@ public class CombustionEngineLogic extends EngineLogic {
     }
 
     @Override
+    public void dissipateHeat(int amount) {
+        heat = Math.max(heat - Math.max(amount, 0), 0);
+    }
+
+    @Override
     public int getShutdownPenaltyTicks() {
         return penaltyCooling;
     }

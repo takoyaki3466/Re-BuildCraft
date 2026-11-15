@@ -10,10 +10,18 @@ group = mod_group_id
 
 repositories {
     mavenLocal()
+    // JEI (任意連携) の配布元。IC2 Classical と同じ取得元。
+    maven {
+        name = 'BlameJared'
+        url = 'https://maven.blamejared.com/'
+        content {
+            includeGroup 'mezz.jei'
+        }
+    }
 }
 
 base {
-    archivesName = mod_id
+    archivesName = 'Re-BuildCraft'
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -102,6 +110,12 @@ dependencies {
     // compileOnly "mezz.jei:jei-${mc_version}-forge-api:${jei_version}"
     // runtimeOnly "mezz.jei:jei-${mc_version}-forge:${jei_version}"
 
+    // 任意連携: JEI (組立台・精製機のレシピ表示)。コンパイルには API だけを使い、公開メタデータ上は必須依存にしない
+    // (neoforge.mods.toml で optional)。JEI なしで試す場合は runtimeOnly の行を外す。
+    compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
+    runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
     // The group id is ignored when searching -- in this case, it is "blank"
@@ -131,7 +145,8 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
                              mod_license            : mod_license,
                              mod_version            : mod_version,
                              mod_authors            : mod_authors,
-                             mod_description        : mod_description]
+                             mod_description        : mod_description,
+                             jei_version_range      : jei_version_range]
     inputs.properties replaceProperties
     expand replaceProperties
     from "src/main/templates"

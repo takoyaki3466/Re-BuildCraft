@@ -128,5 +128,19 @@
   "item.re_buildcraft.filler_module_underground_fill": "Underground Fill Module",
   "item.re_buildcraft.filler_module_hoe": "Hoe Module",
   "item.re_buildcraft.filler_module_set_stairs": "Set Stairs Module",
-  "item.re_buildcraft.filler_module_torch": "Set Torch Module"
+  "item.re_buildcraft.filler_module_torch": "Set Torch Module",
+  "block.re_buildcraft.path_marker": "Path Mark",
+  "block.re_buildcraft.architect": "Architect Table",
+  "block.re_buildcraft.builder": "Builder",
+  "block.re_buildcraft.blueprint_library": "Blueprint Library",
+  "item.re_buildcraft.template": "Template",
+  "item.re_buildcraft.blueprint": "Blueprint",
+  "gui.re_buildcraft.builder.resources": "Building Resources",
+  "gui.re_buildcraft.builder.needed": "Needed",
+  "gui.re_buildcraft.library.delete": "Del",
+  "gui.re_buildcraft.library.lock": "Lock",
+  "gui.re_buildcraft.library.unlock": "Unlock",
+  "message.re_buildcraft.architect.too_large": "The area exceeds the recordable size.",
+  "jei.re_buildcraft.assembly.energy": "Laser energy: %s MJ",
+  "jei.re_buildcraft.refinery.cost": "%s MJ, every %s ticks"
 }

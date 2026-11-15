@@ -21,41 +21,51 @@ public final class PipeConnectionRules {
     private PipeConnectionRules() {
     }
 
-    /** {@code pos} にある {@code type} のパイプが {@code direction} 方向の隣と接続するか。 */
-    public static boolean canConnect(Level level, BlockPos pos, Direction direction, PipeType type) {
+    /**
+     * {@code pos} にある {@code type} のパイプが {@code direction} 方向の隣と接続するか。
+     */
+    public static boolean canConnect(Level level, BlockPos pos, Direction direction, PipeSpec type) {
         BlockPos neighborPos = pos.relative(direction);
+
         if (!level.isLoaded(neighborPos)) {
             return false;
         }
+
         if (level.getBlockState(neighborPos).getBlock() instanceof PipeBlock other) {
             return canConnectPipes(type, other.getPipeType());
         }
+
+        if (!type.connectsToNonPipeBlocks()) {
+            return false;
+        }
+
         BlockEntity neighbor = level.getBlockEntity(neighborPos);
         Direction sideOfNeighbor = direction.getOpposite();
         if (neighbor instanceof IPipeConnectable connectable && !connectable.isPipeConnected(sideOfNeighbor)) {
             return false;
         }
+
         return switch (type.kind()) {
-            case ITEMS -> neighbor instanceof IPipeEntry
-                    || level.getCapability(Capabilities.ItemHandler.BLOCK, neighborPos, sideOfNeighbor) != null
-                    || neighbor instanceof IMachine machine && machine.manageSolids();
-            case FLUIDS -> hasTanks(level.getCapability(Capabilities.FluidHandler.BLOCK, neighborPos, sideOfNeighbor))
-                    || neighbor instanceof IMachine machine && machine.manageLiquids();
-            case POWER -> neighbor instanceof IMachine
-                    || level.getCapability(BuildCraftCapabilities.POWER_RECEPTOR, neighborPos, sideOfNeighbor) != null;
+            case ITEMS -> neighbor instanceof IPipeEntry || level.getCapability(Capabilities.ItemHandler.BLOCK, neighborPos, sideOfNeighbor) != null || neighbor instanceof IMachine machine && machine.manageSolids();
+            case FLUIDS -> hasTanks(level.getCapability(Capabilities.FluidHandler.BLOCK, neighborPos, sideOfNeighbor)) || neighbor instanceof IMachine machine && machine.manageLiquids();
+            case POWER -> neighbor instanceof IMachine || level.getCapability(BuildCraftCapabilities.POWER_RECEPTOR, neighborPos, sideOfNeighbor) != null;
             case STRUCTURE -> false;
         };
     }
 
-    /** パイプ同士: 同じ輸送方式で、互いの素材が相手を受け入れる場合のみ (設定で素材制限を外せる)。 */
-    public static boolean canConnectPipes(PipeType self, PipeType other) {
+    /**
+     * パイプ同士: 同じ輸送方式で、互いが相手を受け入れる場合のみ (設定で素材制限を外せる)。
+     */
+    public static boolean canConnectPipes(PipeSpec self, PipeSpec other) {
         if (self.kind() != other.kind()) {
             return false;
         }
+
         if (Config.PIPES_ALWAYS_CONNECT.get()) {
             return true;
         }
-        return self.material().accepts(other.material(), self.kind()) && other.material().accepts(self.material(), other.kind());
+
+        return self.acceptsPipe(other) && other.acceptsPipe(self);
     }
 
     private static boolean hasTanks(IFluidHandler handler) {

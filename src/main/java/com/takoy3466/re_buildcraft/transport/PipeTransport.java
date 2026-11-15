@@ -16,8 +16,10 @@ public abstract class PipeTransport {
         this.pipe = pipe;
     }
 
-    /** 輸送方式に応じた実装を作る。 */
-    public static PipeTransport create(PipeBlockEntity pipe, PipeType type) {
+    /**
+     * 輸送方式に応じた実装を作る。
+     */
+    public static PipeTransport create(PipeBlockEntity pipe, PipeSpec type) {
         return switch (type.kind()) {
             case ITEMS -> new ItemTransport(pipe);
             case FLUIDS -> new FluidTransport(pipe, type.fluidFlowRate());
@@ -28,17 +30,23 @@ public abstract class PipeTransport {
 
     public abstract void tick(ServerLevel level);
 
-    /** クライアント側の見た目だけの更新。 */
+    /**
+     * クライアント側の見た目だけの更新。
+     */
     public void clientTick() {
     }
 
     public void onNeighborChanged() {
     }
 
-    /** 中身が何も無いか (ゲートのトリガー「パイプが空」)。 */
+    /**
+     * 中身が何も無いか (ゲートのトリガー「パイプが空」)。
+     */
     public abstract boolean isEmpty();
 
-    /** 撤去時に中身を落とす。 */
+    /**
+     * 撤去時に中身を落とす。
+     */
     public void dropContents(Level level, BlockPos pos) {
     }
 
@@ -46,7 +54,9 @@ public abstract class PipeTransport {
 
     public abstract void load(CompoundTag tag, HolderLookup.Provider registries);
 
-    /** クライアントへ送る表示用の状態。既定では保存内容と同じ。 */
+    /**
+     * クライアントへ送る表示用の状態。既定では保存内容と同じ。
+     */
     public CompoundTag saveForClient(HolderLookup.Provider registries) {
         return save(registries);
     }

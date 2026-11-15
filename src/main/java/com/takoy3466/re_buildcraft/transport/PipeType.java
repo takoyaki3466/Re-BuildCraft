@@ -17,7 +17,7 @@ import java.util.function.Supplier;
  *
  * @param fluidFlowRate 液体パイプの 1 tick あたりの流量 (旧 PipeTransportLiquids.flowRate)
  */
-public enum PipeType {
+public enum PipeType implements PipeSpec {
     WOODEN_TRANSPORT("wooden_transport_pipe", PipeKind.ITEMS, PipeMaterial.WOOD, true, WoodItemExtractionBehavior::new),
     COBBLESTONE_TRANSPORT("cobblestone_transport_pipe", PipeKind.ITEMS, PipeMaterial.COBBLESTONE),
     STONE_TRANSPORT("stone_transport_pipe", PipeKind.ITEMS, PipeMaterial.STONE),
@@ -67,27 +67,33 @@ public enum PipeType {
     }
 
     /** レジストリ名。 */
+    @Override
     public String id() {
         return id;
     }
 
+    @Override
     public PipeKind kind() {
         return kind;
     }
 
+    @Override
     public PipeMaterial material() {
         return material;
     }
 
     /** 取り出し元/出力先の面をブロックステートに持つか (木・鉄)。 */
+    @Override
     public boolean directional() {
         return directional;
     }
 
+    @Override
     public PipeBehavior createBehavior() {
         return behaviorFactory.get();
     }
 
+    @Override
     public int fluidFlowRate() {
         return fluidFlowRate;
     }

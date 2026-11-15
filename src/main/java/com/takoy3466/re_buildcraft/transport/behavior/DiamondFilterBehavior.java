@@ -52,7 +52,7 @@ public class DiamondFilterBehavior implements PipeBehavior {
     }
 
     /** 耐久値を持つアイテムは種類だけ、それ以外は成分まで一致を見る (旧: 損傷可能ならダメージ値を無視)。 */
-    private static boolean matches(ItemStack filter, ItemStack stack) {
+    public static boolean matches(ItemStack filter, ItemStack stack) {
         return stack.isDamageableItem() ? ItemStack.isSameItem(filter, stack) : ItemStack.isSameItemSameComponents(filter, stack);
     }
 

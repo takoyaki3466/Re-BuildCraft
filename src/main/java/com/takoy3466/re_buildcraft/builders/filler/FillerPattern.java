@@ -1,7 +1,10 @@
 package com.takoy3466.re_buildcraft.builders.filler;
 
 import com.takoy3466.re_buildcraft.Config;
+import com.takoy3466.re_buildcraft.builders.FakePlayerPlacement;
 import com.takoy3466.re_buildcraft.builders.FillerBlockEntity;
+import com.takoy3466.re_buildcraft.builders.SoftBlocks;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -9,16 +12,12 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
@@ -26,9 +25,6 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.util.FakePlayer;
 
 /**
  * フィラーのパターン。元実装: {@code buildcraft.builders.FillerPatternCore} (BCx 版)。
@@ -75,9 +71,9 @@ public abstract class FillerPattern {
         return filler.serverLevel().getBlockState(new BlockPos(x, y, z));
     }
 
-    /** 旧 BuildCraftAPI.softBlock。 */
+    /** 旧 BuildCraftAPI.softBlock ({@link SoftBlocks})。 */
     protected static boolean isSoft(BlockState state) {
-        return state.isAir() || state.canBeReplaced() && !state.getFluidState().is(FluidTags.LAVA);
+        return SoftBlocks.isSoft(state);
     }
 
     /** 旧 BCAPI.unbreakableBlock。 */
@@ -227,8 +223,10 @@ public abstract class FillerPattern {
                         breakBlock(filler, new BlockPos(c.cx, y, c.cz), 0);
                         return false;
                     } else if (state.getBlock() instanceof LiquidBlock && stack.is(Items.SAND)) {
-                        filler.serverLevel().setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-                        stack.shrink(1);
+                        if (filler.serverLevel().setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL)) {
+                            stack.shrink(1);
+                            c.acted = true;
+                        }
                         c.cx += c.mx;
                         return false;
                     }
@@ -270,7 +268,9 @@ public abstract class FillerPattern {
     /** 旧 eraseBlock: ドロップ無しで消し、火が消える音を出す。 */
     protected static void eraseBlock(FillerBlockEntity filler, BlockPos pos) {
         ServerLevel level = filler.serverLevel();
-        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+        if (level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL)) {
+            filler.cursor().acted = true;
+        }
         level.playSound(null, pos, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, ERASE_VOLUME, ERASE_PITCH);
     }
 
@@ -281,8 +281,14 @@ public abstract class FillerPattern {
         if (state.isAir()) {
             return;
         }
+        // ドロップは撤去に成功した場合だけ出す (撤去できないブロックからアイテムが増えないように)。
+        List<ItemStack> drops = Block.getDrops(state, level, pos, level.getBlockEntity(pos));
+        if (!level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL)) {
+            return;
+        }
+        filler.cursor().acted = true;
         RandomSource random = level.random;
-        for (ItemStack drop : Block.getDrops(state, level, pos, level.getBlockEntity(pos))) {
+        for (ItemStack drop : drops) {
             double offset = (1.0F - DROP_RANGE) * 0.5;
             ItemEntity item = new ItemEntity(level, pos.getX() + random.nextFloat() * DROP_RANGE + offset,
                     pos.getY() + random.nextFloat() * DROP_RANGE + offset, pos.getZ() + random.nextFloat() * DROP_RANGE + offset, drop);
@@ -290,7 +296,6 @@ public abstract class FillerPattern {
             item.lifespan = Math.max(1, item.lifespan - age);
             level.addFreshEntity(item);
         }
-        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
         SoundType sound = state.getSoundType(level, pos, null);
         level.playSound(null, pos, sound.getBreakSound(), SoundSource.BLOCKS, (sound.getVolume() + 1.0F) / 2.0F,
                 sound.getPitch() * BREAK_PITCH);
@@ -312,24 +317,12 @@ public abstract class FillerPattern {
         }
     }
 
-    /**
-     * {@code pos} に材料を使う。ブロックなら {@code pos} そのものに置き、それ以外のアイテムは {@code pos} の {@code face} 面に使う。
-     */
+    /** {@code pos} に材料を使う ({@link FakePlayerPlacement#useAt})。使えた場合は作業したことを記録する。 */
     protected static InteractionResult place(FillerBlockEntity filler, BlockPos pos, Direction face, ItemStack stack) {
-        if (stack.isEmpty()) {
-            return InteractionResult.FAIL;
+        InteractionResult result = FakePlayerPlacement.useAt(filler.serverLevel(), pos, face, stack);
+        if (result.consumesAction()) {
+            filler.cursor().acted = true;
         }
-        ServerLevel level = filler.serverLevel();
-        FakePlayer player = filler.fakePlayer();
-        player.setItemInHand(InteractionHand.MAIN_HAND, stack);
-        try {
-            BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(pos), face, pos, false);
-            if (stack.getItem() instanceof BlockItem blockItem) {
-                return blockItem.place(new BlockPlaceContext(level, player, InteractionHand.MAIN_HAND, stack, hit));
-            }
-            return stack.useOn(new UseOnContext(level, player, InteractionHand.MAIN_HAND, stack, hit));
-        } finally {
-            player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-        }
+        return result;
     }
 }

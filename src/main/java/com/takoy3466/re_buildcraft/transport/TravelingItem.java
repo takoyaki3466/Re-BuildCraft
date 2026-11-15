@@ -11,7 +11,9 @@ import net.minecraft.world.phys.Vec3;
  * 座標はワールド座標で持ち、パイプ間を移るときもそのまま引き継ぐ。
  */
 public final class TravelingItem {
-    /** 旧 Utils.pipeNormalSpeed。 */
+    /**
+     * 旧 Utils.pipeNormalSpeed。
+     */
     public static final float NORMAL_SPEED = 0.01F;
 
     private static final String TAG_ID = "id";
@@ -42,7 +44,9 @@ public final class TravelingItem {
         position = position.add(heading.getStepX() * speed, heading.getStepY() * speed, heading.getStepZ() * speed);
     }
 
-    /** 経路選択の決定的な乱数に使う識別子 (旧 entityId + deterministicRandomization)。 */
+    /**
+     * 経路選択の決定的な乱数に使う識別子 (旧 entityId + deterministicRandomization)。
+     */
     public int id() {
         return id;
     }
@@ -79,7 +83,9 @@ public final class TravelingItem {
         this.heading = heading;
     }
 
-    /** 中心へ向かっている途中か (中心を過ぎると出口へ向かう)。 */
+    /**
+     * 中心へ向かっている途中か (中心を過ぎると出口へ向かう)。
+     */
     public boolean toCenter() {
         return toCenter;
     }
@@ -102,11 +108,7 @@ public final class TravelingItem {
     }
 
     public static TravelingItem load(CompoundTag tag, HolderLookup.Provider registries) {
-        TravelingItem item = new TravelingItem(tag.getInt(TAG_ID),
-                ItemStack.parseOptional(registries, tag.getCompound(TAG_STACK)),
-                new Vec3(tag.getDouble(TAG_X), tag.getDouble(TAG_Y), tag.getDouble(TAG_Z)),
-                tag.getFloat(TAG_SPEED),
-                Direction.from3DDataValue(tag.getInt(TAG_HEADING)));
+        TravelingItem item = new TravelingItem(tag.getInt(TAG_ID), ItemStack.parseOptional(registries, tag.getCompound(TAG_STACK)), new Vec3(tag.getDouble(TAG_X), tag.getDouble(TAG_Y), tag.getDouble(TAG_Z)), tag.getFloat(TAG_SPEED), Direction.from3DDataValue(tag.getInt(TAG_HEADING)));
         item.toCenter = tag.getBoolean(TAG_TO_CENTER);
         return item;
     }

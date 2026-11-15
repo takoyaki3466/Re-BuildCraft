@@ -15,8 +15,10 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -25,6 +27,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
+import java.util.Comparator;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -50,6 +53,14 @@ public class QuarryBlockEntity extends PoweredBlockEntity implements IMachine, I
     private static final int MIN_AREA_SIDE = 3;
     private static final int MAX_ENERGY_STORED = 7000;
     protected static final int FRAME_COST = 25;
+    /**
+     * 作業範囲のうち読み込まれていないチャンクを、作業する間だけ読み込むための一時チケット。
+     * 期限 (tick) が切れると自動で外れる。同じチャンクへ付け直すと期限が延びる。常時読み込み (チャンクローダー) ではない。
+     */
+    private static final TicketType<ChunkPos> WORK_CHUNK_TICKET =
+            TicketType.create("re_buildcraft_quarry", Comparator.comparingLong(ChunkPos::toLong), 300);
+    /** チケットの読み込み半径。中心チャンクとその隣までを読み込み、ブロック更新・液体の隣接判定を行えるようにする。 */
+    private static final int WORK_CHUNK_TICKET_RADIUS = 1;
     /** 採掘対象の探索を始める高さ (クアーリーより 3 ブロック上から)。 */
     private static final int SEARCH_START_ABOVE = 3;
     private static final int NO_TARGET_Y = Integer.MAX_VALUE;
@@ -83,6 +94,8 @@ public class QuarryBlockEntity extends PoweredBlockEntity implements IMachine, I
     protected boolean inProcess;
     protected boolean isDigging;
     protected int targetX;
+    /** 直前の探索が読み込まれていないチャンクで止まったか (保存しない。次の探索で決め直す)。 */
+    private boolean waitingForChunk;
     protected int targetY = NO_TARGET_Y;
     protected int targetZ;
     private boolean initialized;
@@ -245,7 +258,7 @@ public class QuarryBlockEntity extends PoweredBlockEntity implements IMachine, I
             moveArm();
         }
         if (robot != null && blueprint != null) {
-            robot.update(level, blueprint, this::isSoft);
+            robot.update(level, this::isSoft);
             if (level.getGameTime() % ROBOT_SYNC_INTERVAL_TICKS == 0L) {
                 sendNetworkUpdate();
             }
@@ -317,11 +330,14 @@ public class QuarryBlockEntity extends PoweredBlockEntity implements IMachine, I
                 createArm();
             }
             configurePower(false);
-            if (!findTarget(serverLevel, true)) {
+            if (findTarget(serverLevel, true)) {
+                inProcess = true;
+                sendNetworkUpdate();
+            } else if (!waitingForChunk) {
                 stopQuarry();
+                inProcess = true;
+                sendNetworkUpdate();
             }
-            inProcess = true;
-            sendNetworkUpdate();
         }
     }
 
@@ -335,8 +351,12 @@ public class QuarryBlockEntity extends PoweredBlockEntity implements IMachine, I
         }
         if (robot.readyToBuild()) {
             FrameBlueprint.Slot slot = blueprint.nextSlot(level);
+            if (slot == null && blueprint.waitingFor() != null) {
+                requestWorkChunk(level, blueprint.waitingFor());
+            }
             if (slot != null) {
-                robot.schedule(slot);
+                FrameBlueprint frames = blueprint;
+                robot.schedule(new ConstructionRobot.Task(slot.pos(), robotLevel -> frames.apply(robotLevel, slot)));
             }
         }
     }
@@ -354,13 +374,34 @@ public class QuarryBlockEntity extends PoweredBlockEntity implements IMachine, I
 
     /** @param setTarget true ならアームの目標に設定する */
     protected boolean findTarget(Level level, boolean setTarget) {
+        waitingForChunk = false;
         int startY = Math.min(targetY, worldPosition.getY() + SEARCH_START_ABOVE);
         for (int y = startY; y >= miningMinY(level); y--) {
-            if (findTargetInLayer(level, setTarget, y)) {
-                return true;
+            if (findTargetInLayer(level, setTarget, y) || waitingForChunk) {
+                return !waitingForChunk;
             }
         }
         return false;
+    }
+
+    /**
+     * 直前の探索が、読み込まれていないチャンクの位置で止まったか。
+     * true の間は「掘る物が無い」のではなく「まだ調べられない」ので、採掘を終了しない。
+     * 探索を上書きする派生クラスは、{@link #tryTarget} が false を返した後にこれを確認し、true なら探索をそこで止めること。
+     */
+    protected final boolean isWaitingForChunk() {
+        return waitingForChunk;
+    }
+
+    /**
+     * 作業範囲の位置を含むチャンクを、一時チケットで読み込ませる (読み込みは非同期で、後の tick に完了する)。
+     * 旧版 (1.2.5) はブロックを調べるだけでチャンクが読み込まれたため、範囲の一部が読み込まれていなくても採掘が続いた。
+     */
+    protected final void requestWorkChunk(Level level, BlockPos pos) {
+        if (level instanceof ServerLevel serverLevel) {
+            ChunkPos chunk = new ChunkPos(pos);
+            serverLevel.getChunkSource().addRegionTicket(WORK_CHUNK_TICKET, chunk, WORK_CHUNK_TICKET_RADIUS, chunk);
+        }
     }
 
     /**
@@ -382,6 +423,9 @@ public class QuarryBlockEntity extends PoweredBlockEntity implements IMachine, I
                 if (tryTarget(level, setTarget, cx, y, cz)) {
                     return true;
                 }
+                if (waitingForChunk) {
+                    return false;
+                }
             }
         }
         return false;
@@ -393,10 +437,18 @@ public class QuarryBlockEntity extends PoweredBlockEntity implements IMachine, I
             return false;
         }
         BlockPos pos = new BlockPos(area.minX() + cx + 1, y, area.minZ() + cz + 1);
-        if (!level.isLoaded(pos) || !isValidTarget(level, pos, level.getBlockState(pos))) {
+        if (!level.isLoaded(pos)) {
+            // 読み込まれていない位置を「掘る物が無い」として飛ばすと、その部分は二度と掘られない。読み込みを頼んで待つ。
+            requestWorkChunk(level, pos);
+            waitingForChunk = true;
+            return false;
+        }
+        if (!isValidTarget(level, pos, level.getBlockState(pos))) {
             return false;
         }
         if (setTarget && arm != null) {
+            // アームが着くまで目標のチャンクが外れないよう、読み込みを延長しておく。
+            requestWorkChunk(level, pos);
             arm.setTarget(pos.getX(), pos.getY() + 1, pos.getZ());
             targetX = pos.getX();
             targetY = pos.getY() + 1;

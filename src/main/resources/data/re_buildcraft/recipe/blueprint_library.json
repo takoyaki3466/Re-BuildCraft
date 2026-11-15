@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "bbb",
+    "bBb",
+    "bbb"
+  ],
+  "key": {
+    "b": {
+      "type": "neoforge:components",
+      "items": "re_buildcraft:blueprint",
+      "components": {},
+      "strict": true
+    },
+    "B": {
+      "item": "minecraft:bookshelf"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:blueprint_library",
+    "count": 1
+  }
+}

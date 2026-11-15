@@ -10,25 +10,21 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-/** Re-BuildCraft 独自のレシピ種別。 */
+/**
+ * Re-BuildCraft 独自のレシピ種別。
+ */
 public final class ModRecipes {
     private static final String ASSEMBLY = "assembly";
     private static final String REFINERY = "refinery";
 
-    public static final DeferredRegister<RecipeType<?>> RECIPE_TYPES =
-            DeferredRegister.create(Registries.RECIPE_TYPE, ReBuildcraft.MODID);
-    public static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS =
-            DeferredRegister.create(Registries.RECIPE_SERIALIZER, ReBuildcraft.MODID);
+    public static final DeferredRegister<RecipeType<?>> RECIPE_TYPES = DeferredRegister.create(Registries.RECIPE_TYPE, ReBuildcraft.MODID);
+    public static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS = DeferredRegister.create(Registries.RECIPE_SERIALIZER, ReBuildcraft.MODID);
 
-    public static final DeferredHolder<RecipeType<?>, RecipeType<AssemblyRecipe>> ASSEMBLY_TYPE =
-            RECIPE_TYPES.register(ASSEMBLY, () -> RecipeType.simple(ReBuildcraft.id(ASSEMBLY)));
-    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AssemblyRecipe>> ASSEMBLY_SERIALIZER =
-            RECIPE_SERIALIZERS.register(ASSEMBLY, AssemblyRecipe.Serializer::new);
+    public static final DeferredHolder<RecipeType<?>, RecipeType<AssemblyRecipe>> ASSEMBLY_TYPE = RECIPE_TYPES.register(ASSEMBLY, () -> RecipeType.simple(ReBuildcraft.id(ASSEMBLY)));
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AssemblyRecipe>> ASSEMBLY_SERIALIZER = RECIPE_SERIALIZERS.register(ASSEMBLY, AssemblyRecipe.Serializer::new);
 
-    public static final DeferredHolder<RecipeType<?>, RecipeType<RefineryRecipe>> REFINERY_TYPE =
-            RECIPE_TYPES.register(REFINERY, () -> RecipeType.simple(ReBuildcraft.id(REFINERY)));
-    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<RefineryRecipe>> REFINERY_SERIALIZER =
-            RECIPE_SERIALIZERS.register(REFINERY, RefineryRecipe.Serializer::new);
+    public static final DeferredHolder<RecipeType<?>, RecipeType<RefineryRecipe>> REFINERY_TYPE = RECIPE_TYPES.register(REFINERY, () -> RecipeType.simple(ReBuildcraft.id(REFINERY)));
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<RefineryRecipe>> REFINERY_SERIALIZER = RECIPE_SERIALIZERS.register(REFINERY, RefineryRecipe.Serializer::new);
 
     private ModRecipes() {
     }

@@ -3,7 +3,9 @@ package com.takoy3466.re_buildcraft.transport;
 import com.takoy3466.re_buildcraft.api.power.BuildCraftCapabilities;
 import com.takoy3466.re_buildcraft.api.power.IPowerConduit;
 import com.takoy3466.re_buildcraft.api.power.IPowerReceptor;
+
 import java.util.Arrays;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -35,7 +37,9 @@ public final class PowerTransport extends PipeTransport implements IPowerConduit
     private final int[] nextPowerQuery = new int[SIDES];
     private final double[] internalPower = new double[SIDES];
     private final double[] internalNextPower = new double[SIDES];
-    /** 直前の tick に各面を流れた量 (描画とトリガー用)。 */
+    /**
+     * 直前の tick に各面を流れた量 (描画とトリガー用)。
+     */
     private final int[] displayPower = new int[SIDES];
     private long currentDate = Long.MIN_VALUE;
     private boolean displayChanged;
@@ -44,7 +48,9 @@ public final class PowerTransport extends PipeTransport implements IPowerConduit
         super(pipe);
     }
 
-    /** 1 tick に 1 回、次の値を現在の値へ繰り上げる (旧 step)。 */
+    /**
+     * 1 tick に 1 回、次の値を現在の値へ繰り上げる (旧 step)。
+     */
     private void step(Level level) {
         if (currentDate != level.getGameTime()) {
             currentDate = level.getGameTime();
@@ -70,8 +76,7 @@ public final class PowerTransport extends PipeTransport implements IPowerConduit
             int index = direction.get3DDataValue();
             pipes[index] = neighborPipe(level, direction);
             if (pipes[index] == null) {
-                receptors[index] = level.getCapability(BuildCraftCapabilities.POWER_RECEPTOR,
-                        pipe.getBlockPos().relative(direction), direction.getOpposite());
+                receptors[index] = level.getCapability(BuildCraftCapabilities.POWER_RECEPTOR, pipe.getBlockPos().relative(direction), direction.getOpposite());
             }
         }
 
@@ -152,12 +157,17 @@ public final class PowerTransport extends PipeTransport implements IPowerConduit
 
     @Nullable
     private PowerTransport neighborPipe(Level level, Direction direction) {
-        return level.getBlockEntity(pipe.getBlockPos().relative(direction)) instanceof PipeBlockEntity next
-                && next.transport() instanceof PowerTransport power ? power : null;
+        return level.getBlockEntity(pipe.getBlockPos().relative(direction)) instanceof PipeBlockEntity next && next.transport() instanceof PowerTransport power ? power : null;
     }
 
-    /** {@code from} の面から MJ が入ってくる。 */
+    /**
+     * {@code from} の面から MJ が入ってくる。
+     */
     public void receiveEnergy(Level level, Direction from, double amount) {
+        if (pipe.behavior().interceptPower(pipe, from, amount)) {
+            addDisplayedPower(from, amount);
+            return;
+        }
         step(level);
         int index = from.get3DDataValue();
         internalNextPower[index] += amount;
@@ -167,18 +177,37 @@ public final class PowerTransport extends PipeTransport implements IPowerConduit
         }
     }
 
-    /** {@code from} の面の先が MJ を要求している。 */
+    /**
+     * {@code from} の面の先が MJ を要求している。
+     */
     public void requestEnergy(Level level, Direction from, int amount) {
         step(level);
         nextPowerQuery[from.get3DDataValue()] += amount;
+        pipe.behavior().onPowerRequested(pipe, from, amount);
     }
 
-    /** 木の動力パイプが自分の面から送り出した量を表示に足す。 */
+    /**
+     * いずれかの面の先が MJ を要求しているか (この tick の要求)。
+     */
+    public boolean isRequestingPower() {
+        for (int query : powerQuery) {
+            if (query > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 木の動力パイプが自分の面から送り出した量を表示に足す。
+     */
     public void addDisplayedPower(Direction direction, double amount) {
         displayPower[direction.get3DDataValue()] += (int) amount;
     }
 
-    /** 描画用: 面ごとの直前の流量。 */
+    /**
+     * 描画用: 面ごとの直前の流量。
+     */
     public int displayPower(Direction direction) {
         return displayPower[direction.get3DDataValue()];
     }

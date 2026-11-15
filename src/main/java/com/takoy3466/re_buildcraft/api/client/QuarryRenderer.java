@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * クアーリーのドリルアーム・建設ロボット・作業範囲の縞模様のレーザーの描画。
@@ -61,7 +62,7 @@ public class QuarryRenderer<T extends QuarryBlockEntity> implements BlockEntityR
         }
         Vec3 robot = quarry.getRobotPosition();
         if (robot != null && quarry.isBuildingFrame()) {
-            renderRobot(quarry, robot, origin, poseStack, buffers);
+            renderRobot(robot, quarry.getRobotTarget(), quarry.getRobotLaserPower(), origin, poseStack, buffers);
         }
     }
 
@@ -100,15 +101,21 @@ public class QuarryRenderer<T extends QuarryBlockEntity> implements BlockEntityR
         BoxRenderer.render(poseStack.last(), head, light, headX, headY, headZ, headX + HEAD_SIZE, headY + HEAD_HEIGHT, headZ + HEAD_SIZE);
     }
 
-    private static void renderRobot(QuarryBlockEntity quarry, Vec3 robot, BlockPos origin, PoseStack poseStack, MultiBufferSource buffers) {
+    /**
+     * 建設ロボット (旧 EntityRobot / RenderRobot) と、作業中のマスへのビーム。ビルダーも同じ描き方を使う。
+     *
+     * @param target     作業中のマス (無ければ null)
+     * @param laserPower ビームの強さ (テクスチャの段階)
+     */
+    public static void renderRobot(Vec3 robot, @Nullable BlockPos target, float laserPower, BlockPos origin, PoseStack poseStack,
+                                   MultiBufferSource buffers) {
         Vec3 local = robot.subtract(Vec3.atLowerCornerOf(origin));
         VertexConsumer body = buffers.getBuffer(RenderType.entityCutout(ROBOT_TEXTURE));
         BoxRenderer.render(poseStack.last(), body, LightTexture.FULL_BRIGHT,
                 (float) local.x - ROBOT_HALF_SIZE, (float) local.y - ROBOT_HALF_SIZE, (float) local.z - ROBOT_HALF_SIZE,
                 (float) local.x + ROBOT_HALF_SIZE, (float) local.y + ROBOT_HALF_SIZE, (float) local.z + ROBOT_HALF_SIZE);
-        BlockPos target = quarry.getRobotTarget();
         if (target != null) {
-            int stage = Math.min(BEAM_TEXTURES.length - 1, Math.max(0, (int) Math.ceil(quarry.getRobotLaserPower()) - 1));
+            int stage = Math.min(BEAM_TEXTURES.length - 1, Math.max(0, (int) Math.ceil(laserPower) - 1));
             VertexConsumer beam = buffers.getBuffer(RenderType.entityCutout(BEAM_TEXTURES[stage]));
             BoxRenderer.renderBeam(poseStack, beam, LightTexture.FULL_BRIGHT, local,
                     Vec3.atCenterOf(target).subtract(Vec3.atLowerCornerOf(origin)), ROBOT_BEAM_HALF_WIDTH);

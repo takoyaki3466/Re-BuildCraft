@@ -18,7 +18,11 @@ public enum PipeMaterial {
     DIAMOND,
     OBSIDIAN,
     STRIPES,
-    VOID;
+    VOID,
+    /**
+     * 素材による接続制限を持たない (アドオンのパイプ用。旧 Additional Pipes の分配パイプ・テレポートパイプなど)。
+     */
+    GENERIC;
 
     /**
      * この素材のパイプが {@code other} のパイプを接続相手として受け入れるか。

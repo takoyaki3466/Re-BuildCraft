@@ -36,7 +36,7 @@ public class PipeBlockEntity extends BlockEntity implements IPipeEntry, IPowerRe
     private static final String TAG_SIGNALS = "signals";
     private static final String TAG_GATE = "gate";
 
-    private final PipeType type;
+    private final PipeSpec type;
     private final PipeTransport transport;
     private final PipeBehavior behavior;
     private final PipeSignals signals = new PipeSignals();
@@ -47,9 +47,11 @@ public class PipeBlockEntity extends BlockEntity implements IPipeEntry, IPowerRe
 
     public PipeBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PIPE.get(), pos, state);
+
         if (!(state.getBlock() instanceof PipeBlock pipeBlock)) {
             throw new IllegalStateException("PipeBlockEntity requires a PipeBlock, but got " + state.getBlock());
         }
+
         this.type = pipeBlock.getPipeType();
         this.transport = PipeTransport.create(this, type);
         this.behavior = type.createBehavior();
@@ -61,35 +63,46 @@ public class PipeBlockEntity extends BlockEntity implements IPipeEntry, IPowerRe
         if (level == null) {
             return;
         }
+
         if (level.isClientSide) {
             transport.clientTick();
             return;
         }
+
         ServerLevel serverLevel = (ServerLevel) level;
+
         if (!initialized) {
             initialized = true;
             behavior.initialize(this);
             signals.update(this);
         }
+
         PowerProvider provider = behavior.powerProvider();
+
         if (provider != null) {
             provider.update(this, serverLevel);
         }
+
         behavior.tick(this);
         transport.tick(serverLevel);
         signals.tick(this);
+
         if (gate != null) {
             gate.tick(this);
         }
+
         if (syncScheduled) {
             syncScheduled = false;
             BlockState state = getBlockState();
             serverLevel.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_CLIENTS);
         }
+
         setChanged();
     }
 
-    /** この tick の終わりにクライアントへ状態を送る。 */
+    /**
+     * この tick の終わりにクライアントへ状態を送る。
+     */
     public void scheduleSync() {
         syncScheduled = true;
     }
@@ -100,7 +113,9 @@ public class PipeBlockEntity extends BlockEntity implements IPipeEntry, IPowerRe
         return getBlockState().getValue(PipeConnections.property(direction));
     }
 
-    /** 接続している隣のパイプ。 */
+    /**
+     * 接続している隣のパイプ。
+     */
     @Nullable
     public PipeBlockEntity getConnectedPipe(Direction direction) {
         if (level == null || !isConnected(direction)) {
@@ -109,7 +124,9 @@ public class PipeBlockEntity extends BlockEntity implements IPipeEntry, IPowerRe
         return level.getBlockEntity(worldPosition.relative(direction)) instanceof PipeBlockEntity other ? other : null;
     }
 
-    /** 方向付きパイプ (木・鉄) が指している面。 */
+    /**
+     * 方向付きパイプ (木・鉄) が指している面。
+     */
     @Nullable
     public Direction getSpecialSide() {
         BlockState state = getBlockState();
@@ -118,6 +135,7 @@ public class PipeBlockEntity extends BlockEntity implements IPipeEntry, IPowerRe
 
     public void setSpecialSide(@Nullable Direction direction) {
         BlockState state = getBlockState();
+
         if (level != null && state.hasProperty(DirectionalPipeBlock.SPECIAL)) {
             level.setBlock(worldPosition, state.setValue(DirectionalPipeBlock.SPECIAL, PipeSide.of(direction)), Block.UPDATE_ALL);
         }
@@ -147,28 +165,37 @@ public class PipeBlockEntity extends BlockEntity implements IPipeEntry, IPowerRe
         if (level == null || newBlock.getPipeType().kind() != type.kind()) {
             return;
         }
+
         HolderLookup.Provider registries = level.registryAccess();
+
         CompoundTag transportTag = transport.save(registries);
         CompoundTag signalsTag = signals.save();
         CompoundTag gateTag = gate == null ? null : gate.save(registries);
+
         BlockPos pos = worldPosition;
         Level currentLevel = level;
         BlockState newState = Block.updateFromNeighbourShapes(newBlock.defaultBlockState(), currentLevel, pos);
+
         // 置き換えで中身を落とさないよう、先に空にしてから差し替える。
         transport.load(new CompoundTag(), registries);
         signals.load(new CompoundTag());
         gate = null;
+
         currentLevel.setBlock(pos, newState, Block.UPDATE_ALL);
+
         if (currentLevel.getBlockEntity(pos) instanceof PipeBlockEntity converted) {
             converted.transport.load(transportTag, registries);
             converted.signals.load(signalsTag);
             converted.gate = gateTag == null ? null : Gate.load(gateTag, registries);
+
             converted.scheduleSync();
             converted.setChanged();
         }
     }
 
-    /** 素材の制約込みで、{@code direction} へ送り出せるか (旧 Pipe.outputOpen)。 */
+    /**
+     * 素材の制約込みで、{@code direction} へ送り出せるか (旧 Pipe.outputOpen)。
+     */
     public boolean outputOpen(Direction direction) {
         return behavior.outputOpen(this, direction);
     }
@@ -181,13 +208,23 @@ public class PipeBlockEntity extends BlockEntity implements IPipeEntry, IPowerRe
         signals.update(this);
     }
 
-    /** 撤去時: 中身・ワイヤー・ゲートを落とす。 */
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        behavior.onRemoved(this);
+    }
+
+    /**
+     * 撤去時: 中身・ワイヤー・ゲートを落とす。
+     */
     public void dropContents() {
         if (level == null) {
             return;
         }
+
         transport.dropContents(level, worldPosition);
         signals.dropWires(level, worldPosition);
+
         if (gate != null) {
             Block.popResource(level, worldPosition, gate.kind().toItemStack());
         }
@@ -212,7 +249,7 @@ public class PipeBlockEntity extends BlockEntity implements IPipeEntry, IPowerRe
 
     // ---- アクセサ -------------------------------------------------------------
 
-    public PipeType type() {
+    public PipeSpec type() {
         return type;
     }
 
@@ -243,9 +280,11 @@ public class PipeBlockEntity extends BlockEntity implements IPipeEntry, IPowerRe
     @Override
     public PowerProvider getPowerProvider() {
         PowerProvider provider = behavior.powerProvider();
+
         if (provider == null) {
             throw new IllegalStateException(type.id() + " does not receive power");
         }
+
         return provider;
     }
 
@@ -257,6 +296,7 @@ public class PipeBlockEntity extends BlockEntity implements IPipeEntry, IPowerRe
     @Override
     public int powerRequest() {
         PowerProvider provider = behavior.powerProvider();
+
         return provider == null ? 0 : provider.getMaxEnergyReceived();
     }
 
@@ -266,15 +306,22 @@ public class PipeBlockEntity extends BlockEntity implements IPipeEntry, IPowerRe
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.put(TAG_TRANSPORT, transport.save(registries));
+
         CompoundTag behaviorTag = new CompoundTag();
+
         behavior.save(behaviorTag, registries);
         tag.put(TAG_BEHAVIOR, behaviorTag);
+
         PowerProvider provider = behavior.powerProvider();
+
         if (provider != null) {
             CompoundTag powerTag = new CompoundTag();
             provider.save(powerTag);
+
             tag.put(TAG_POWER, powerTag);
+
         }
+
         writeSharedState(tag, registries);
     }
 
@@ -288,14 +335,18 @@ public class PipeBlockEntity extends BlockEntity implements IPipeEntry, IPowerRe
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+
         if (tag.contains(TAG_TRANSPORT)) {
             transport.load(tag.getCompound(TAG_TRANSPORT), registries);
         }
+
         behavior.load(tag.getCompound(TAG_BEHAVIOR), registries);
         PowerProvider provider = behavior.powerProvider();
+
         if (provider != null) {
             provider.load(tag.getCompound(TAG_POWER));
         }
+
         signals.load(tag.getCompound(TAG_SIGNALS));
         gate = tag.contains(TAG_GATE) ? Gate.load(tag.getCompound(TAG_GATE), registries) : null;
     }

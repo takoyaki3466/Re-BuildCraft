@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Random;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -55,6 +56,7 @@ public final class FluidTransport extends PipeTransport {
     FluidTransport(PipeBlockEntity pipe, int flowRate) {
         super(pipe);
         this.flowRate = flowRate;
+
         for (Direction direction : Direction.values()) {
             sideHandlers[direction.get3DDataValue()] = new SideHandler(direction);
         }
@@ -77,6 +79,10 @@ public final class FluidTransport extends PipeTransport {
     public int fill(Direction side, FluidStack resource, boolean execute) {
         if (resource.isEmpty()) {
             return 0;
+        }
+        OptionalInt intercepted = pipe.behavior().interceptFluidFill(pipe, side, resource, execute);
+        if (intercepted.isPresent()) {
+            return intercepted.getAsInt();
         }
         int index = side.get3DDataValue();
         isInput[index] = true;

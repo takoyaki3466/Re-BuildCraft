@@ -128,5 +128,19 @@
   "item.re_buildcraft.filler_module_underground_fill": "地下埋めモジュール",
   "item.re_buildcraft.filler_module_hoe": "クワモジュール",
   "item.re_buildcraft.filler_module_set_stairs": "階段設置モジュール",
-  "item.re_buildcraft.filler_module_torch": "松明設置モジュール"
+  "item.re_buildcraft.filler_module_torch": "松明設置モジュール",
+  "block.re_buildcraft.path_marker": "緑マーカー",
+  "block.re_buildcraft.architect": "設計台",
+  "block.re_buildcraft.builder": "ビルダー",
+  "block.re_buildcraft.blueprint_library": "設計図ライブラリ",
+  "item.re_buildcraft.template": "テンプレート",
+  "item.re_buildcraft.blueprint": "設計図",
+  "gui.re_buildcraft.builder.resources": "建築資材",
+  "gui.re_buildcraft.builder.needed": "必要",
+  "gui.re_buildcraft.library.delete": "削除",
+  "gui.re_buildcraft.library.lock": "ロック",
+  "gui.re_buildcraft.library.unlock": "解除",
+  "message.re_buildcraft.architect.too_large": "記録限界サイズを超えています。",
+  "jei.re_buildcraft.assembly.energy": "レーザーのエネルギー: %s MJ",
+  "jei.re_buildcraft.refinery.cost": "%s MJ・%s tick ごと"
 }

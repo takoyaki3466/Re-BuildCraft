@@ -11,14 +11,14 @@ import org.jetbrains.annotations.Nullable;
  * 木のパイプの「取り出し元」の面の選び方。元実装: {@code buildcraft.transport.PipeLogicWood}。
  * 輸送・防水・導電のどの木のパイプも同じ規則で、パイプ以外のインベントリ/液体容器のある面を取り出し元にする。
  */
-final class WoodSource {
+public final class WoodSource {
     private static final int SIDES = Direction.values().length;
 
     private WoodSource() {
     }
 
     /** 取り出し元になれる面か (旧 isInput)。 */
-    static boolean isInput(PipeBlockEntity pipe, Direction direction) {
+    public static boolean isInput(PipeBlockEntity pipe, Direction direction) {
         Level level = pipe.getLevel();
         if (level == null || !pipe.isConnected(direction)) {
             return false;
@@ -33,7 +33,7 @@ final class WoodSource {
     }
 
     /** 現在の取り出し元の次から順に探して切り替える (レンチ操作, 旧 switchSource)。 */
-    static void switchSource(PipeBlockEntity pipe) {
+    public static void switchSource(PipeBlockEntity pipe) {
         Direction current = pipe.getSpecialSide();
         int start = current == null ? 0 : current.get3DDataValue() + 1;
         Direction next = null;
@@ -50,7 +50,7 @@ final class WoodSource {
     }
 
     /** 取り出し元が無い、または無効になっていれば選び直す (旧 switchSourceIfNeeded)。 */
-    static void switchSourceIfNeeded(PipeBlockEntity pipe) {
+    public static void switchSourceIfNeeded(PipeBlockEntity pipe) {
         Direction current = pipe.getSpecialSide();
         if (current == null || !isInput(pipe, current)) {
             switchSource(pipe);
@@ -58,7 +58,7 @@ final class WoodSource {
     }
 
     @Nullable
-    static Direction source(PipeBlockEntity pipe) {
+    public static Direction source(PipeBlockEntity pipe) {
         return pipe.getSpecialSide();
     }
 }

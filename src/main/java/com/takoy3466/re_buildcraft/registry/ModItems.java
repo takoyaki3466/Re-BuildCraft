@@ -1,12 +1,16 @@
 package com.takoy3466.re_buildcraft.registry;
 
 import com.takoy3466.re_buildcraft.ReBuildcraft;
+import com.takoy3466.re_buildcraft.builders.blueprint.Blueprint;
+import com.takoy3466.re_buildcraft.builders.blueprint.BlueprintItem;
 import com.takoy3466.re_buildcraft.builders.filler.FillerPatterns;
 import com.takoy3466.re_buildcraft.core.WrenchItem;
 import com.takoy3466.re_buildcraft.energy.ContainerOnlyBucketItem;
 import com.takoy3466.re_buildcraft.transport.PipeType;
+
 import java.util.HashMap;
 import java.util.Map;
+
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
@@ -16,7 +20,9 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-/** Re-BuildCraft のアイテム登録。 */
+/**
+ * Re-BuildCraft のアイテム登録。
+ */
 public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(ReBuildcraft.MODID);
 
@@ -29,10 +35,8 @@ public final class ModItems {
     public static final DeferredItem<WrenchItem> WRENCH = ITEMS.registerItem("wrench", WrenchItem::new, new Item.Properties().stacksTo(1));
 
     // ---- energy ----
-    public static final DeferredItem<BucketItem> OIL_BUCKET = ITEMS.register("oil_bucket",
-            () -> new BucketItem(ModFluids.OIL.get(), bucketProperties()));
-    public static final DeferredItem<ContainerOnlyBucketItem> FUEL_BUCKET = ITEMS.register("fuel_bucket",
-            () -> new ContainerOnlyBucketItem(ModFluids.FUEL.get(), bucketProperties()));
+    public static final DeferredItem<BucketItem> OIL_BUCKET = ITEMS.register("oil_bucket", () -> new BucketItem(ModFluids.OIL.get(), bucketProperties()));
+    public static final DeferredItem<ContainerOnlyBucketItem> FUEL_BUCKET = ITEMS.register("fuel_bucket", () -> new ContainerOnlyBucketItem(ModFluids.FUEL.get(), bucketProperties()));
 
     // ---- silicon ----
     public static final DeferredItem<Item> REDSTONE_CHIPSET = ITEMS.registerSimpleItem("redstone_chipset");
@@ -72,8 +76,19 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> REFINERY = ITEMS.registerSimpleBlockItem(ModBlocks.REFINERY);
     public static final DeferredItem<BlockItem> MARKER = ITEMS.registerSimpleBlockItem(ModBlocks.MARKER);
     public static final DeferredItem<BlockItem> FILLER = ITEMS.registerSimpleBlockItem(ModBlocks.FILLER);
+    public static final DeferredItem<BlockItem> PATH_MARKER = ITEMS.registerSimpleBlockItem(ModBlocks.PATH_MARKER);
+    public static final DeferredItem<BlockItem> ARCHITECT = ITEMS.registerSimpleBlockItem(ModBlocks.ARCHITECT);
+    public static final DeferredItem<BlockItem> BUILDER = ITEMS.registerSimpleBlockItem(ModBlocks.BUILDER);
+    public static final DeferredItem<BlockItem> LIBRARY = ITEMS.registerSimpleBlockItem(ModBlocks.LIBRARY);
+    /**
+     * 旧 ItemBptTemplate / ItemBptBluePrint (1 個ずつしか重ねられない)。
+     */
+    public static final DeferredItem<BlueprintItem> TEMPLATE = ITEMS.registerItem("template", properties -> new BlueprintItem(properties, Blueprint.Kind.TEMPLATE), new Item.Properties().stacksTo(1));
+    public static final DeferredItem<BlueprintItem> BLUEPRINT = ITEMS.registerItem("blueprint", properties -> new BlueprintItem(properties, Blueprint.Kind.BLUEPRINT), new Item.Properties().stacksTo(1));
 
-    /** フィラーモジュール 23 種 (旧 ItemFillerModule のダメージ値 0 - 22)。キーは旧ダメージ値。 */
+    /**
+     * フィラーモジュール 23 種 (旧 ItemFillerModule のダメージ値 0 - 22)。キーは旧ダメージ値。
+     */
     private static final Map<Integer, DeferredItem<Item>> FILLER_MODULES = new HashMap<>();
 
     static {
@@ -81,6 +96,7 @@ public final class ModItems {
             FILLER_MODULES.put(entry.id(), ITEMS.registerSimpleItem("filler_module_" + entry.name()));
         }
     }
+
     public static final DeferredItem<BlockItem> AUTO_WORKBENCH = ITEMS.registerSimpleBlockItem(ModBlocks.AUTO_WORKBENCH);
     public static final DeferredItem<BlockItem> LASER = ITEMS.registerSimpleBlockItem(ModBlocks.LASER);
     public static final DeferredItem<BlockItem> ASSEMBLY_TABLE = ITEMS.registerSimpleBlockItem(ModBlocks.ASSEMBLY_TABLE);

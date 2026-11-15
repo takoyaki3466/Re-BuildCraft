@@ -14,6 +14,14 @@ public final class MechanicalArm {
     private static final double ARRIVAL_FACTOR = 2.0;
     private static final double VERTICAL_SPEED_DIVISOR = 2.0;
 
+    /**
+     * {@code distance} 離れた目標に 1 回の {@link #doMove} で到達するための移動量の下限 (この値より大きい必要がある)。
+     * 到達判定は「残りの距離 &lt; 移動量 x 2」(水平・垂直とも)。
+     */
+    public static double minimumStepToReach(double distance) {
+        return distance / ARRIVAL_FACTOR;
+    }
+
     private static final String TAG_ORIGIN_X = "originX";
     private static final String TAG_ORIGIN_Z = "originZ";
     private static final String TAG_BASE_Y = "baseY";

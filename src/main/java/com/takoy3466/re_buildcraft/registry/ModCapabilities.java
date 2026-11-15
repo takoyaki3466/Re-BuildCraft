@@ -26,6 +26,13 @@ public final class ModCapabilities {
         PoweredBlockEntity.registerCapabilities(event, ModBlockEntities.QUARRY.get());
         PoweredBlockEntity.registerCapabilities(event, ModBlockEntities.REFINERY.get());
         PoweredBlockEntity.registerCapabilities(event, ModBlockEntities.FILLER.get());
+        PoweredBlockEntity.registerCapabilities(event, ModBlockEntities.BUILDER.get());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.BUILDER.get(),
+                (builder, side) -> builder.getMaterials());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.ARCHITECT.get(),
+                (architect, side) -> architect.getInventory());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.LIBRARY.get(),
+                (library, side) -> library.getInventory());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.FILLER.get(),
                 (filler, side) -> filler.getResources());
 

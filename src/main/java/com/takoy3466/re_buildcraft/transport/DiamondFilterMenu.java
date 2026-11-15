@@ -34,14 +34,15 @@ public class DiamondFilterMenu extends AbstractContainerMenu {
         this.filters = filters;
         for (int row = 0; row < filters.getContainerSize() / DiamondFilterBehavior.SLOTS_PER_SIDE; row++) {
             for (int column = 0; column < DiamondFilterBehavior.SLOTS_PER_SIDE; column++) {
-                addSlot(new FilterSlot(filters, column + row * DiamondFilterBehavior.SLOTS_PER_SIDE,
-                        FILTER_LEFT + column * SLOT_SIZE, FILTER_TOP + row * SLOT_SIZE));
+                addSlot(new FilterSlot(filters, column + row * DiamondFilterBehavior.SLOTS_PER_SIDE, FILTER_LEFT + column * SLOT_SIZE, FILTER_TOP + row * SLOT_SIZE));
             }
         }
         PlayerInventorySlots.add(this::addSlot, playerInventory, PLAYER_INVENTORY_Y);
     }
 
-    /** クライアント側。フィルターの中身はメニューのスロット同期で届く。 */
+    /**
+     * クライアント側。フィルターの中身はメニューのスロット同期で届く。
+     */
     public static DiamondFilterMenu createClient(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf extraData) {
         extraData.readBlockPos();
         return new DiamondFilterMenu(containerId, playerInventory, new SimpleContainer(DiamondFilterBehavior.FILTER_SLOTS), null);
@@ -71,7 +72,9 @@ public class DiamondFilterMenu extends AbstractContainerMenu {
         return pipe == null || Container.stillValidBlockEntity(pipe, player);
     }
 
-    /** 見本用の枠。直接の出し入れはできない。 */
+    /**
+     * 見本用の枠。直接の出し入れはできない。
+     */
     private static final class FilterSlot extends Slot {
         private FilterSlot(Container container, int slot, int x, int y) {
             super(container, slot, x, y);

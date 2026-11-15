@@ -1,0 +1,36 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "btb",
+    "ycy",
+    "gCg"
+  ],
+  "key": {
+    "b": {
+      "item": "minecraft:black_dye"
+    },
+    "t": {
+      "item": "re_buildcraft:marker"
+    },
+    "y": {
+      "item": "minecraft:yellow_dye"
+    },
+    "c": {
+      "item": "minecraft:crafting_table"
+    },
+    "g": {
+      "item": "re_buildcraft:diamond_gear"
+    },
+    "C": {
+      "type": "neoforge:components",
+      "items": "re_buildcraft:template",
+      "components": {},
+      "strict": true
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:architect",
+    "count": 1
+  }
+}

@@ -28,6 +28,8 @@ public final class FrameBlueprint {
     private final Deque<Slot> clearList = new ArrayDeque<>();
     private final Deque<Slot> buildList = new ArrayDeque<>();
     private boolean done;
+    @Nullable
+    private BlockPos waitingFor;
 
     /**
      * @param softBlock 撤去を省略してよい柔らかいブロック (旧 {@code BuildCraftAPI.softBlock})
@@ -70,19 +72,35 @@ public final class FrameBlueprint {
     /** 次に作業すべきマス。すべて設計図どおりなら null を返し、{@link #isDone()} が true になる。 */
     @Nullable
     public Slot nextSlot(Level level) {
+        waitingFor = null;
         Slot slot = pollInvalid(level, clearList, true);
-        if (slot == null) {
+        if (slot == null && waitingFor == null) {
             slot = pollInvalid(level, buildList, false);
         }
         done = clearList.isEmpty() && buildList.isEmpty();
         return slot;
     }
 
+    /**
+     * 直前の {@link #nextSlot} が、読み込まれていないチャンクのマスで止まった場合のその位置。
+     * そのマスは捨てずに残しているため、チャンクが読み込まれてから作業を続けられる。
+     */
+    @Nullable
+    public BlockPos waitingFor() {
+        return waitingFor;
+    }
+
     @Nullable
     private Slot pollInvalid(Level level, Deque<Slot> list, boolean skipSoft) {
         while (!list.isEmpty()) {
             Slot slot = list.pollFirst();
-            if (!level.isLoaded(slot.pos()) || isValid(level, slot)) {
+            if (!level.isLoaded(slot.pos())) {
+                // 読み込まれていないマスを飛ばすと、そのマスの枠組みは作られないまま完了扱いになる。残して待つ。
+                list.addFirst(slot);
+                waitingFor = slot.pos();
+                return null;
+            }
+            if (isValid(level, slot)) {
                 continue;
             }
             if (skipSoft && softBlock.test(level.getBlockState(slot.pos()))) {

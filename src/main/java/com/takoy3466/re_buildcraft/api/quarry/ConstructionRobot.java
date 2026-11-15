@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -12,10 +13,19 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 枠組みを組み立てるロボット。予約された作業を一定間隔で 1 つずつ実行し、作業範囲の周りを飛び回る。
- * 元実装: {@code buildcraft.core.EntityRobot} (旧実装ではエンティティ)。
+ * 建設ロボット。予約された作業を一定間隔で 1 つずつ実行し、作業範囲の周りを飛び回る。
+ * 元実装: {@code buildcraft.core.EntityRobot} (旧実装ではエンティティ)。クアーリーの枠組みとビルダーの両方が使う。
  */
 public final class ConstructionRobot {
+    /**
+     * ロボットに予約する 1 マス分の作業。
+     *
+     * @param pos    作業するマス (ビームの向き先)
+     * @param action 実行する処理
+     */
+    public record Task(BlockPos pos, Consumer<Level> action) {
+    }
+
     /** 予約できる作業の上限 (旧 MAX_SIZE)。 */
     public static final int MAX_QUEUE = 20;
     /** 旧 EntityRobot.buildSpeed の既定値。 */
@@ -27,7 +37,7 @@ public final class ConstructionRobot {
     private static final float LASER_POWER_SCALE = 4.0F;
 
     private final QuarryArea area;
-    private final Deque<FrameBlueprint.Slot> targets = new ArrayDeque<>();
+    private final Deque<Task> targets = new ArrayDeque<>();
     private Vec3 position;
     private BlockPos destination;
     private Vec3 velocity = Vec3.ZERO;
@@ -47,20 +57,20 @@ public final class ConstructionRobot {
         return targets.isEmpty();
     }
 
-    public void schedule(FrameBlueprint.Slot slot) {
-        targets.add(slot);
+    public void schedule(Task task) {
+        targets.add(task);
     }
 
     /**
-     * 1 tick 分動く。待ち時間が切れたら先頭の作業を設計図に従って実行する。
+     * 1 tick 分動く。待ち時間が切れたら先頭の作業を実行する。
      *
      * @param softBlock 飛び回る先として選べる柔らかいブロック
      */
-    public void update(Level level, FrameBlueprint blueprint, Predicate<BlockState> softBlock) {
+    public void update(Level level, Predicate<BlockState> softBlock) {
         move(level, softBlock);
         updateWait();
         if (!targets.isEmpty() && wait <= 0) {
-            blueprint.apply(level, targets.pollFirst());
+            targets.pollFirst().action().accept(level);
         }
     }
 
@@ -122,7 +132,7 @@ public final class ConstructionRobot {
     /** 現在作業中のマス。ビームの向き先。 */
     @Nullable
     public BlockPos currentTarget() {
-        FrameBlueprint.Slot slot = targets.peekFirst();
-        return slot == null ? null : slot.pos();
+        Task task = targets.peekFirst();
+        return task == null ? null : task.pos();
     }
 }

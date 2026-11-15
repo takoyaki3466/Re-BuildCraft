@@ -2,9 +2,11 @@ package com.takoy3466.re_buildcraft.transport;
 
 import com.takoy3466.re_buildcraft.Config;
 import com.takoy3466.re_buildcraft.api.transport.IPipeEntry;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -29,14 +31,18 @@ import org.jetbrains.annotations.Nullable;
  * 行き先が無ければ来た方向へ跳ね返し、それも無理なら 1 tick 待ってから落とす。
  */
 public final class ItemTransport extends PipeTransport {
-    /** アイテムが流れる高さ (旧 Utils.getPipeFloorOf)。 */
+    /**
+     * アイテムが流れる高さ (旧 Utils.getPipeFloorOf)。
+     */
     public static final double PIPE_FLOOR = 0.25;
     private static final double BLOCK_CENTER = 0.5;
     private static final double ENTRANCE_OFFSET = 0.5;
     private static final float CENTER_TOLERANCE = 1.01F;
     private static final float OVERFLOW_EXPLOSION_POWER = 1.0F;
     private static final int DROP_PICKUP_DELAY = 10;
-    /** 行き先が無いアイテムを落とすまでに待つ回数 (旧 PipeTransportItems.wait)。 */
+    /**
+     * 行き先が無いアイテムを落とすまでに待つ回数 (旧 PipeTransportItems.wait)。
+     */
     private static final int DROP_RETRY = 2;
     private static final String TAG_ITEMS = "items";
 
@@ -54,26 +60,34 @@ public final class ItemTransport extends PipeTransport {
      */
     public void injectFromSide(ItemStack stack, Direction heading, float speed) {
         Level level = pipe.getLevel();
+
         if (level == null || stack.isEmpty()) {
             return;
         }
+
         BlockPos pos = pipe.getBlockPos();
-        Vec3 entrance = new Vec3(pos.getX() + BLOCK_CENTER, pos.getY() + PIPE_FLOOR, pos.getZ() + BLOCK_CENTER)
-                .subtract(heading.getStepX() * ENTRANCE_OFFSET, heading.getStepY() * ENTRANCE_OFFSET, heading.getStepZ() * ENTRANCE_OFFSET);
+        Vec3 entrance = new Vec3(pos.getX() + BLOCK_CENTER, pos.getY() + PIPE_FLOOR, pos.getZ() + BLOCK_CENTER).subtract(heading.getStepX() * ENTRANCE_OFFSET, heading.getStepY() * ENTRANCE_OFFSET, heading.getStepZ() * ENTRANCE_OFFSET);
+
         entering(new TravelingItem(level.random.nextInt(), stack, entrance, speed, heading));
     }
 
-    /** 隣のパイプからアイテムが入ってきた (旧 entityEntering)。 */
+    /**
+     * 隣のパイプからアイテムが入ってきた (旧 entityEntering)。
+     */
     public void entering(TravelingItem item) {
         if (item.stack().isEmpty()) {
             return;
         }
+
         Direction heading = item.heading();
+
         if (heading.getAxis().isHorizontal()) {
             Vec3 position = item.position();
             item.setPosition(new Vec3(position.x, pipe.getBlockPos().getY() + PIPE_FLOOR, position.z));
         }
+
         item.setToCenter(true);
+
         pipe.behavior().onItemEntered(pipe, item);
         items.add(item);
         pipe.scheduleSync();
@@ -110,12 +124,15 @@ public final class ItemTransport extends PipeTransport {
     private void reachCenter(ServerLevel level, TravelingItem item) {
         item.setToCenter(false);
         item.setPosition(center());
+
         if (pipe.behavior().consumeAtCenter(pipe, item)) {
             items.remove(item);
             pipe.scheduleSync();
             return;
         }
+
         Direction destination = resolveDestination(level, item);
+
         if (destination == null) {
             if (dropWait == 0) {
                 dropWait = DROP_RETRY;
@@ -131,31 +148,38 @@ public final class ItemTransport extends PipeTransport {
             dropWait = 0;
             item.setHeading(destination);
         }
+
         pipe.scheduleSync();
     }
 
     @Nullable
     private Direction resolveDestination(Level level, TravelingItem item) {
         List<Direction> movements = getPossibleMovements(level, item);
+
         if (movements.isEmpty()) {
             return null;
         }
+
         BlockPos pos = pipe.getBlockPos();
         int index = Math.abs(item.id() + pos.getX() + pos.getY() + pos.getZ()) % movements.size();
+
         return movements.get(index);
     }
 
     private List<Direction> getPossibleMovements(Level level, TravelingItem item) {
         List<Direction> movements = new ArrayList<>();
         Direction back = item.heading().getOpposite();
+
         for (Direction direction : Direction.values()) {
             if (direction != back && pipe.outputOpen(direction) && canReceive(level, direction, item)) {
                 movements.add(direction);
             }
         }
+
         if (movements.isEmpty() && canReceive(level, back, item)) {
             movements.add(back);
         }
+
         return pipe.behavior().filterMovements(pipe, movements, item);
     }
 
@@ -163,30 +187,38 @@ public final class ItemTransport extends PipeTransport {
         if (!pipe.isConnected(direction)) {
             return false;
         }
+
         BlockPos neighborPos = pipe.getBlockPos().relative(direction);
+
         if (level.getBlockEntity(neighborPos) instanceof IPipeEntry entry) {
             return entry.acceptsItems();
         }
+
         IItemHandler handler = level.getCapability(Capabilities.ItemHandler.BLOCK, neighborPos, direction.getOpposite());
-        return handler != null
-                && ItemHandlerHelper.insertItemStacked(handler, item.stack().copy(), true).getCount() < item.stack().getCount();
+
+        return handler != null && ItemHandlerHelper.insertItemStacked(handler, item.stack().copy(), true).getCount() < item.stack().getCount();
     }
 
     private void handleTileReached(ServerLevel level, TravelingItem item) {
         Direction heading = item.heading();
         BlockPos neighborPos = pipe.getBlockPos().relative(heading);
+
         if (level.getBlockEntity(neighborPos) instanceof PipeBlockEntity next && next.transport() instanceof ItemTransport nextItems) {
             nextItems.entering(item);
             return;
         }
+
         if (level.getBlockEntity(neighborPos) instanceof IPipeEntry entry && entry.acceptsItems()) {
             entry.injectItem(item.stack(), heading);
             return;
         }
+
         IItemHandler handler = level.getCapability(Capabilities.ItemHandler.BLOCK, neighborPos, heading.getOpposite());
+
         if (handler != null) {
             item.setStack(ItemHandlerHelper.insertItemStacked(handler, item.stack(), false));
         }
+
         if (!item.stack().isEmpty()) {
             dropItem(level, item);
         }
@@ -197,11 +229,14 @@ public final class ItemTransport extends PipeTransport {
         if (item.stack().isEmpty()) {
             return;
         }
+
         Vec3 position = item.position();
         ItemEntity entity = new ItemEntity(level, position.x, position.y, position.z, item.stack());
         Direction heading = item.heading();
+
         entity.setDeltaMovement(heading.getStepX() * item.speed(), heading.getStepY() * item.speed(), heading.getStepZ() * item.speed());
         entity.setPickUpDelay(DROP_PICKUP_DELAY);
+
         level.addFreshEntity(entity);
         pipe.behavior().onItemDropped(entity);
     }
@@ -215,16 +250,20 @@ public final class ItemTransport extends PipeTransport {
         Vec3 center = center();
         Vec3 position = item.position();
         double tolerance = item.speed() * CENTER_TOLERANCE;
-        return Math.abs(center.x - position.x) < tolerance && Math.abs(center.y - position.y) < tolerance
-                && Math.abs(center.z - position.z) < tolerance;
+
+        return Math.abs(center.x - position.x) < tolerance && Math.abs(center.y - position.y) < tolerance && Math.abs(center.z - position.z) < tolerance;
     }
 
-    /** 自分のブロックの外へ出た。 */
+    /**
+     * 自分のブロックの外へ出た。
+     */
     private boolean endReached(TravelingItem item) {
         return isOutside(item, 0.0, 1.0);
     }
 
-    /** 隣のブロックよりさらに外へ出た (位置が壊れている)。 */
+    /**
+     * 隣のブロックよりさらに外へ出た (位置が壊れている)。
+     */
     private boolean outOfBounds(TravelingItem item) {
         return isOutside(item, -1.0, 2.0);
     }
@@ -232,20 +271,22 @@ public final class ItemTransport extends PipeTransport {
     private boolean isOutside(TravelingItem item, double min, double max) {
         BlockPos pos = pipe.getBlockPos();
         Vec3 position = item.position();
-        return position.x > pos.getX() + max || position.x < pos.getX() + min
-                || position.y > pos.getY() + max || position.y < pos.getY() + min
-                || position.z > pos.getZ() + max || position.z < pos.getZ() + min;
+
+        return position.x > pos.getX() + max || position.x < pos.getX() + min || position.y > pos.getY() + max || position.y < pos.getY() + min || position.z > pos.getZ() + max || position.z < pos.getZ() + min;
     }
 
-    /** 同じアイテムをまとめる (旧 groupEntities)。 */
+    /**
+     * 同じアイテムをまとめる (旧 groupEntities)。
+     */
     private void groupItems() {
         for (int i = 0; i < items.size(); i++) {
             TravelingItem base = items.get(i);
             Iterator<TravelingItem> iterator = items.listIterator(i + 1);
+
             while (iterator.hasNext()) {
                 TravelingItem other = iterator.next();
-                if (ItemStack.isSameItemSameComponents(base.stack(), other.stack())
-                        && base.stack().getCount() + other.stack().getCount() < base.stack().getMaxStackSize()) {
+
+                if (ItemStack.isSameItemSameComponents(base.stack(), other.stack()) && base.stack().getCount() + other.stack().getCount() < base.stack().getMaxStackSize()) {
                     base.stack().grow(other.stack().getCount());
                     iterator.remove();
                 }
@@ -258,14 +299,17 @@ public final class ItemTransport extends PipeTransport {
     @Override
     public void clientTick() {
         Iterator<TravelingItem> iterator = items.iterator();
+
         while (iterator.hasNext()) {
             TravelingItem item = iterator.next();
+
             if (item.toCenter() && middleReached(item)) {
                 // 行き先はサーバーが決める。届くまで中心で待つ。
                 item.setPosition(center());
                 continue;
             }
             item.move();
+
             if (!item.toCenter() && endReached(item)) {
                 iterator.remove();
             }
@@ -283,7 +327,9 @@ public final class ItemTransport extends PipeTransport {
         return items.isEmpty();
     }
 
-    /** ゲートのトリガー「アイテム通過中」(パラメーター付き)。 */
+    /**
+     * ゲートのトリガー「アイテム通過中」(パラメーター付き)。
+     */
     public boolean contains(ItemStack filter) {
         for (TravelingItem item : items) {
             if (filter.isEmpty() || ItemStack.isSameItemSameComponents(item.stack(), filter)) {
@@ -296,9 +342,11 @@ public final class ItemTransport extends PipeTransport {
     @Override
     public void dropContents(Level level, BlockPos pos) {
         groupItems();
+
         for (TravelingItem item : items) {
             Block.popResource(level, pos, item.stack());
         }
+
         items.clear();
     }
 
@@ -306,11 +354,13 @@ public final class ItemTransport extends PipeTransport {
     public CompoundTag save(HolderLookup.Provider registries) {
         CompoundTag tag = new CompoundTag();
         ListTag list = new ListTag();
+
         for (TravelingItem item : items) {
             if (!item.stack().isEmpty()) {
                 list.add(item.save(registries));
             }
         }
+
         tag.put(TAG_ITEMS, list);
         return tag;
     }
@@ -319,6 +369,7 @@ public final class ItemTransport extends PipeTransport {
     public void load(CompoundTag tag, HolderLookup.Provider registries) {
         items.clear();
         ListTag list = tag.getList(TAG_ITEMS, Tag.TAG_COMPOUND);
+
         for (int i = 0; i < list.size(); i++) {
             TravelingItem item = TravelingItem.load(list.getCompound(i), registries);
             if (!item.stack().isEmpty()) {

@@ -690,7 +690,10 @@ public final class FillerPatterns {
                 return;
             }
             ItemStack container = stack.getCraftingRemainingItem();
-            filler.serverLevel().setBlock(pos, block, Block.UPDATE_ALL);
+            if (!filler.serverLevel().setBlock(pos, block, Block.UPDATE_ALL)) {
+                return;
+            }
+            filler.cursor().acted = true;
             stack.shrink(1);
             if (!container.isEmpty()) {
                 filler.storeOrEject(container);
@@ -708,8 +711,11 @@ public final class FillerPatterns {
             if (block == null) {
                 return false;
             }
-            tank.drain(USE_QUANTITY, IFluidHandler.FluidAction.EXECUTE);
-            filler.serverLevel().setBlock(pos, block, Block.UPDATE_ALL);
+            // 置けた場合だけタンクから減らす。
+            if (filler.serverLevel().setBlock(pos, block, Block.UPDATE_ALL)) {
+                tank.drain(USE_QUANTITY, IFluidHandler.FluidAction.EXECUTE);
+                filler.cursor().acted = true;
+            }
             return true;
         }
 

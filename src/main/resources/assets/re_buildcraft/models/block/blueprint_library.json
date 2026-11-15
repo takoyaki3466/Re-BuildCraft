@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "re_buildcraft:block/builders/builder_side",
+    "bottom": "re_buildcraft:block/builders/builder_side",
+    "side": "re_buildcraft:block/builders/library_side"
+  }
+}

@@ -2,10 +2,12 @@ package com.takoy3466.re_buildcraft;
 
 import com.mojang.logging.LogUtils;
 import com.takoy3466.re_buildcraft.api.engine.EngineFuel;
+import com.takoy3466.re_buildcraft.builders.BuilderPayloads;
 import com.takoy3466.re_buildcraft.registry.ModBlockEntities;
 import com.takoy3466.re_buildcraft.registry.ModBlocks;
 import com.takoy3466.re_buildcraft.registry.ModCapabilities;
 import com.takoy3466.re_buildcraft.registry.ModCreativeTabs;
+import com.takoy3466.re_buildcraft.registry.ModDataComponents;
 import com.takoy3466.re_buildcraft.registry.ModFeatures;
 import com.takoy3466.re_buildcraft.registry.ModFluids;
 import com.takoy3466.re_buildcraft.registry.ModItems;
@@ -30,6 +32,7 @@ public class ReBuildcraft {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public ReBuildcraft(IEventBus modEventBus, ModContainer modContainer) {
+        ModDataComponents.register(modEventBus);
         ModFluids.register(modEventBus);
         ModBlocks.register(modEventBus);
         ModItems.register(modEventBus);
@@ -40,6 +43,7 @@ public class ReBuildcraft {
         ModCreativeTabs.register(modEventBus);
 
         modEventBus.addListener(ModCapabilities::register);
+        modEventBus.addListener(BuilderPayloads::register);
         modEventBus.addListener(this::registerDataMapTypes);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);

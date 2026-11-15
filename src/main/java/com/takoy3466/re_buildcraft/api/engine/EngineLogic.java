@@ -135,6 +135,14 @@ public abstract class EngineLogic {
         return 0;
     }
 
+    /**
+     * 外部の冷却装置 (アドオンのヒートシンクなど) から熱を取り除く。熱の概念が無いエンジンでは何もしない。
+     *
+     * @param amount 取り除く熱量 (0 以上)。熱量は 0 未満にならない
+     */
+    public void dissipateHeat(int amount) {
+    }
+
     /** 計測器向け: 停止後、再始動できるようになるまでの残り tick 数 (鉄エンジンのみ)。 */
     public int getShutdownPenaltyTicks() {
         return 0;

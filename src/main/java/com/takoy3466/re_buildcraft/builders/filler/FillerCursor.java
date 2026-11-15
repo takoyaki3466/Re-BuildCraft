@@ -29,4 +29,14 @@ public final class FillerCursor {
     public boolean[][] pattern = new boolean[0][0];
     /** 階段設置で使う、偽プレイヤーの向き (度)。 */
     public float playerYaw;
+    /**
+     * 直近の 1 回の作業で、ワールドを実際に変えたか (置いた・壊した・消した・液体を置いた)。
+     * 作業の前に false に戻し、{@link FillerPattern} の処理が成功したときだけ true にする。
+     */
+    public boolean acted;
+
+    /** 作業位置と作業用の値。1 回の作業の前後で比べ、位置が進んだかを判定する。 */
+    public int[] progressKey() {
+        return new int[]{cx, cy, cz, sx, sy, sz, ex, ey, ez, mx, my, mz, mode};
+    }
 }

@@ -23,6 +23,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import org.jetbrains.annotations.Nullable;
@@ -64,7 +65,12 @@ public class MarkerBlockEntity extends BlockEntity implements IAreaProvider {
     private boolean signals;
 
     public MarkerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.MARKER.get(), pos, state);
+        this(ModBlockEntities.MARKER.get(), pos, state);
+    }
+
+    /** 緑マーカー ({@link PathMarkerBlockEntity}) など、マーカーを元にしたブロックエンティティ用。 */
+    protected MarkerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
     }
 
     // ---- 状態 -----------------------------------------------------------------
@@ -408,7 +414,7 @@ public class MarkerBlockEntity extends BlockEntity implements IAreaProvider {
         }
     }
 
-    private void sync() {
+    protected void sync() {
         setChanged();
         if (level != null && !level.isClientSide) {
             BlockState state = getBlockState();

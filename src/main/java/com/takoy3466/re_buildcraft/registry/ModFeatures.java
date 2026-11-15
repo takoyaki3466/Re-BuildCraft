@@ -16,8 +16,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModFeatures {
     public static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create(Registries.FEATURE, ReBuildcraft.MODID);
 
-    public static final DeferredHolder<Feature<?>, OilDepositFeature> OIL_DEPOSIT =
-            FEATURES.register("oil_deposit", () -> new OilDepositFeature(NoneFeatureConfiguration.CODEC));
+    public static final DeferredHolder<Feature<?>, OilDepositFeature> OIL_DEPOSIT = FEATURES.register("oil_deposit", () -> new OilDepositFeature(NoneFeatureConfiguration.CODEC));
 
     private ModFeatures() {
     }

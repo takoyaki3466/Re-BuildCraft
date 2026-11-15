@@ -4,21 +4,28 @@ import com.takoy3466.re_buildcraft.ReBuildcraft;
 import com.takoy3466.re_buildcraft.api.client.EngineRenderer;
 import com.takoy3466.re_buildcraft.api.client.LaserBeamRenderer;
 import com.takoy3466.re_buildcraft.api.client.QuarryRenderer;
+import com.takoy3466.re_buildcraft.builders.blueprint.BlueprintItem;
+import com.takoy3466.re_buildcraft.client.screen.ArchitectScreen;
 import com.takoy3466.re_buildcraft.client.screen.AssemblyTableScreen;
 import com.takoy3466.re_buildcraft.client.screen.AutoWorkbenchScreen;
+import com.takoy3466.re_buildcraft.client.screen.BuilderScreen;
 import com.takoy3466.re_buildcraft.client.screen.CombustionEngineScreen;
 import com.takoy3466.re_buildcraft.client.screen.DiamondFilterScreen;
 import com.takoy3466.re_buildcraft.client.screen.FillerScreen;
 import com.takoy3466.re_buildcraft.client.screen.GateScreen;
+import com.takoy3466.re_buildcraft.client.screen.LibraryScreen;
 import com.takoy3466.re_buildcraft.client.screen.RefineryScreen;
 import com.takoy3466.re_buildcraft.client.screen.SteamEngineScreen;
 import com.takoy3466.re_buildcraft.registry.ModBlockEntities;
 import com.takoy3466.re_buildcraft.registry.ModFluids;
+import com.takoy3466.re_buildcraft.registry.ModItems;
 import com.takoy3466.re_buildcraft.registry.ModMenus;
+import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
@@ -40,7 +47,21 @@ public final class ReBuildcraftClient {
         event.registerBlockEntityRenderer(ModBlockEntities.PIPE.get(), PipeRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.REFINERY.get(), RefineryRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.MARKER.get(), MarkerRenderer::new);
-        event.registerBlockEntityRenderer(ModBlockEntities.FILLER.get(), FillerRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.FILLER.get(), AreaRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.ARCHITECT.get(), AreaRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.BUILDER.get(), BuilderRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.PATH_MARKER.get(), PathMarkerRenderer::new);
+    }
+
+    /** テンプレート・設計図アイテムの見た目を、記録済みかどうかで切り替える (旧 getIconFromDamage)。 */
+    @SubscribeEvent
+    public static void clientSetup(FMLClientSetupEvent event) {
+        event.enqueueWork(() -> {
+            for (BlueprintItem item : new BlueprintItem[]{ModItems.TEMPLATE.get(), ModItems.BLUEPRINT.get()}) {
+                ItemProperties.register(item, ReBuildcraft.id("written"),
+                        (stack, level, entity, seed) -> BlueprintItem.ref(stack) == null ? 0.0F : 1.0F);
+            }
+        });
     }
 
     @SubscribeEvent
@@ -53,6 +74,9 @@ public final class ReBuildcraftClient {
         event.register(ModMenus.REFINERY.get(), RefineryScreen::new);
         event.register(ModMenus.AUTO_WORKBENCH.get(), AutoWorkbenchScreen::new);
         event.register(ModMenus.FILLER.get(), FillerScreen::new);
+        event.register(ModMenus.ARCHITECT.get(), ArchitectScreen::new);
+        event.register(ModMenus.BUILDER.get(), BuilderScreen::new);
+        event.register(ModMenus.LIBRARY.get(), LibraryScreen::new);
     }
 
     @SubscribeEvent

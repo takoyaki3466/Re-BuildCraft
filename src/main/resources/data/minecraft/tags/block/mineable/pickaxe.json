@@ -8,6 +8,9 @@
     "re_buildcraft:laser",
     "re_buildcraft:assembly_table",
     "re_buildcraft:quarry",
-    "re_buildcraft:filler"
+    "re_buildcraft:filler",
+    "re_buildcraft:architect",
+    "re_buildcraft:builder",
+    "re_buildcraft:blueprint_library"
   ]
 }

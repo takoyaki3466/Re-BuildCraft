@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 public class DirectionalPipeBlock extends PipeBlock {
     public static final EnumProperty<PipeSide> SPECIAL = EnumProperty.create("special", PipeSide.class);
 
-    public DirectionalPipeBlock(Properties properties, PipeType pipeType) {
+    public DirectionalPipeBlock(Properties properties, PipeSpec pipeType) {
         super(properties, pipeType);
         registerDefaultState(defaultBlockState().setValue(SPECIAL, PipeSide.NONE));
     }

@@ -29,12 +29,27 @@ public final class PowerProvider {
     private int powerLossRegularity = DEFAULT_POWER_LOSS_REGULARITY;
     private final SafeTimeTracker energyLossTracker = new SafeTimeTracker();
     private final int[] powerSources = new int[Direction.values().length];
+    /** {@link #configureTickInputBuffer} が有効か。 */
+    private boolean holdsTickInput;
+    /** 前回の {@link #update} から受け取った量 (保存しない)。 */
+    private float receivedSinceUpdate;
 
     public void configure(int minEnergyReceived, int maxEnergyReceived, int minActivationEnergy, int maxEnergyStored) {
         this.minEnergyReceived = minEnergyReceived;
         this.maxEnergyReceived = maxEnergyReceived;
         this.minActivationEnergy = minActivationEnergy;
         this.maxEnergyStored = maxEnergyStored;
+    }
+
+    /**
+     * 有効にすると、蓄電量の上限 ({@code maxEnergyStored}) を、前回の {@link #update} から受け取った量の分だけ一時的に超えて受け取る。
+     * 受け取った MJ を次の作業の機会まで捨てずに持つためのもので、1 回の作業量は変わらない。
+     * 大出力のエンジンから 1 tick に蓄電量以上が届いても、届いた分を同じ (または次の) tick の連続作業に使える。
+     * 使い切れずに残った分は、次に受け取るときの上限を広げないため、残量が増え続けることはない
+     * (残量の上限は「蓄電量 + 1 回の更新の間に受け取った量」)。既定は無効 (旧実装と同じく上限で切り捨てる)。
+     */
+    public void configureTickInputBuffer(boolean enabled) {
+        this.holdsTickInput = enabled;
     }
 
     public void configurePowerPerdition(int powerLoss, int powerLossRegularity) {
@@ -48,6 +63,7 @@ public final class PowerProvider {
      * @return doWork を呼んだ場合 true
      */
     public boolean update(IPowerReceptor receptor, Level level) {
+        receivedSinceUpdate = 0.0F;
         boolean worked = false;
         if (energyStored >= minActivationEnergy) {
             receptor.doWork();
@@ -84,7 +100,14 @@ public final class PowerProvider {
 
     public void receiveEnergy(float quantity, Direction from) {
         powerSources[from.ordinal()] = POWER_SOURCE_TICKS;
-        energyStored = Math.min(energyStored + quantity, maxEnergyStored);
+        if (!holdsTickInput) {
+            energyStored = Math.min(energyStored + quantity, maxEnergyStored);
+            return;
+        }
+        receivedSinceUpdate += quantity;
+        float limit = maxEnergyStored + receivedSinceUpdate;
+        // すでに上限を超えて残っている分は減らさない (受け取った分を捨てるだけ)。
+        energyStored = Math.max(energyStored, Math.min(energyStored + quantity, limit));
     }
 
     public boolean isPowerSource(Direction from) {

@@ -4,12 +4,16 @@ import com.takoy3466.re_buildcraft.api.power.PowerProvider;
 import com.takoy3466.re_buildcraft.transport.PipeBlockEntity;
 import com.takoy3466.re_buildcraft.transport.TravelingItem;
 import java.util.List;
+import java.util.OptionalInt;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -67,6 +71,55 @@ public interface PipeBehavior {
     /** レンチで右クリックされた。処理した場合 true。 */
     default boolean onWrench(PipeBlockEntity pipe) {
         return false;
+    }
+
+    /**
+     * レンチで右クリックされた (操作したプレイヤー付き)。画面を開くなどプレイヤーが必要な素材はこちらを上書きする。
+     * 既定では {@link #onWrench(PipeBlockEntity)} に委譲する。
+     */
+    default boolean onWrench(PipeBlockEntity pipe, Player player) {
+        return onWrench(pipe);
+    }
+
+    /** プレイヤーなどが設置した直後 (サーバー・クライアントの両方で呼ばれる)。 */
+    default void onPlaced(PipeBlockEntity pipe, LivingEntity placer) {
+    }
+
+    /**
+     * ブロックエンティティが取り除かれた (撤去・チャンクのアンロード・ワールドの終了)。
+     * 外部の登録簿に自分を載せている素材は、ここで登録を外す。
+     */
+    default void onRemoved(PipeBlockEntity pipe) {
+    }
+
+    /** {@code direction} 方向へ出す弱いレッドストーン信号 (0 - 15)。ゲートの信号とは大きい方が使われる。 */
+    default int redstoneSignal(PipeBlockEntity pipe, Direction direction) {
+        return 0;
+    }
+
+    /** {@code direction} 方向へ出す強いレッドストーン信号 (ブロック越しに伝わる, 0 - 15)。 */
+    default int directRedstoneSignal(PipeBlockEntity pipe, Direction direction) {
+        return 0;
+    }
+
+    /**
+     * 液体が {@code side} の面から入ってくる前に呼ばれる。値を返すとパイプのバッファには入れず、
+     * 返した量を受け入れたものとする (液体を別の場所へ送る素材用)。空なら通常どおりバッファへ入れる。
+     */
+    default OptionalInt interceptFluidFill(PipeBlockEntity pipe, Direction side, FluidStack resource, boolean execute) {
+        return OptionalInt.empty();
+    }
+
+    /**
+     * MJ が {@code from} の面から入ってくる前に呼ばれる。true を返すと、その MJ はこの素材が処理したものとして
+     * パイプには蓄えない (MJ を別の場所へ送る素材用)。
+     */
+    default boolean interceptPower(PipeBlockEntity pipe, Direction from, double amount) {
+        return false;
+    }
+
+    /** {@code from} の面の先から MJ の要求が届いた (要求を別の場所へ伝える素材用)。要求自体は通常どおり記録される。 */
+    default void onPowerRequested(PipeBlockEntity pipe, Direction from, int amount) {
     }
 
     default void onNeighborChanged(PipeBlockEntity pipe) {

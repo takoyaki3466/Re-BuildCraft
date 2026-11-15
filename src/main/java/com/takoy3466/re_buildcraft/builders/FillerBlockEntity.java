@@ -13,6 +13,7 @@ import com.takoy3466.re_buildcraft.builders.filler.FillerPatterns;
 import com.takoy3466.re_buildcraft.builders.filler.FillerRecipes;
 import com.takoy3466.re_buildcraft.registry.ModBlockEntities;
 import com.takoy3466.re_buildcraft.registry.ModItems;
+import java.util.Arrays;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -32,7 +33,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.neoforged.neoforge.common.util.FakePlayer;
-import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
@@ -44,11 +44,11 @@ import org.jetbrains.annotations.Nullable;
  * <ul>
  *   <li>隣のマーカーなどから作業範囲を受け取り、マーカーは撤去する (旧 initialize)。</li>
  *   <li>作業台枠 (0 - 8) の並びかモジュールでパターンが決まる (旧 computeRecipe / FillerRecipe)。</li>
- *   <li>材料枠 (9 - 35) の最初のアイテムを材料として、MJ が作業量を上回る限り何回でも作業する (旧 doWork の再帰呼び出し)。</li>
+ *   <li>材料枠 (9 - 35) の最初のアイテムを材料として、作業量分の MJ が蓄えられている限り同じ tick の中で作業を繰り返す (旧 doWork の再帰呼び出し)。</li>
  *   <li>ゲートの運転指示: Off で停止、Loop で終わっても最初からやり直す、On で通常運転 (旧 actionActivated / lastMode)。</li>
  * </ul>
  */
-public class FillerBlockEntity extends PoweredBlockEntity implements IMachine, IActionReceptor, MenuProvider {
+public class FillerBlockEntity extends PoweredBlockEntity implements IMachine, IActionReceptor, MenuProvider, AreaHolder {
     public static final int GRID_SLOTS = FillerRecipes.GRID_SIZE;
     public static final int RESOURCE_SLOTS = 27;
     public static final int SLOT_COUNT = GRID_SLOTS + RESOURCE_SLOTS;
@@ -98,6 +98,8 @@ public class FillerBlockEntity extends PoweredBlockEntity implements IMachine, I
         super(ModBlockEntities.FILLER.get(), pos, state);
         powerProvider.configure(INITIAL_MIN_RECEIVED, INITIAL_MAX_RECEIVED, INITIAL_WORK, INITIAL_MAX_STORED);
         powerProvider.configurePowerPerdition(PERDITION_LOSS, PERDITION_REGULARITY);
+        // 大出力のエンジンから 1 tick に蓄電量 (パターンの作業量 x 回数) 以上が届いても、その分を捨てずに連続作業に使う。
+        powerProvider.configureTickInputBuffer(true);
     }
 
     // ---- パターンから使う ------------------------------------------------------
@@ -116,7 +118,7 @@ public class FillerBlockEntity extends PoweredBlockEntity implements IMachine, I
     }
 
     public FakePlayer fakePlayer() {
-        return FakePlayerFactory.getMinecraft(serverLevel());
+        return FakePlayerPlacement.player(serverLevel());
     }
 
     /** 旧 setPower: 1 回の作業に使う MJ と、その何回分を蓄えるか。 */
@@ -215,25 +217,38 @@ public class FillerBlockEntity extends PoweredBlockEntity implements IMachine, I
         computeRecipe();
     }
 
-    /** 旧 doWork: 運転指示が Off でなく、作業量分の MJ を使えた限り繰り返す。 */
+    /**
+     * 旧 doWork: 運転指示が Off でなく、範囲・パターンがあり未完了なら、作業量分の MJ が蓄えられている限り同じ tick の中で作業を繰り返す
+     * (旧実装は doWork の最後で蓄積 &gt; 作業量なら自分を呼び直していた)。1 tick の回数に固定の上限は無い。
+     * <ul>
+     *   <li>1 回の作業の前に、作業量分の MJ があるかを確かめる (足りなければ作業しない)。</li>
+     *   <li>パターンを 1 回進め、ワールドを変えたか作業位置が進んだ場合だけ、作業量分の MJ を使う。</li>
+     *   <li>何も変わらなかった場合 (材料が無い・置けない・液体が無いなど) は、同じ対象を繰り返さずにその tick の作業をやめる。MJ は使わない。</li>
+     *   <li>完了したら繰り返しをやめる。完了後の空回りで MJ を使わない。</li>
+     * </ul>
+     * 繰り返すたびに作業量 (1 以上) の MJ を使うため、繰り返しの回数は蓄積量 ÷ 作業量で必ず終わる。
+     */
     @Override
     public void doWork() {
-        if (level == null || level.isClientSide) {
+        if (level == null || level.isClientSide || lastMode == MachineControl.OFF || box == null || pattern == null) {
             return;
         }
-        while (lastMode != MachineControl.OFF && powerProvider.useEnergy(workEnergy, workEnergy, true) >= workEnergy) {
-            if (box != null && pattern != null && !done) {
-                int slot = firstResourceSlot();
-                ItemStack stack = slot < 0 ? ItemStack.EMPTY : inventory.getStackInSlot(slot);
-                done = pattern.iterate(this, stack);
-                if (slot >= 0) {
-                    // 材料はスタックを直接減らすため、変化を通知する。
-                    inventory.setStackInSlot(slot, stack.isEmpty() ? ItemStack.EMPTY : stack);
-                }
+        while (!done && powerProvider.getEnergyStored() >= workEnergy) {
+            int slot = firstResourceSlot();
+            ItemStack stack = slot < 0 ? ItemStack.EMPTY : inventory.getStackInSlot(slot);
+            int[] before = cursor.progressKey();
+            cursor.acted = false;
+            boolean finished = pattern.iterate(this, stack);
+            if (slot >= 0) {
+                // 材料はスタックを直接減らすため、変化を通知する。
+                inventory.setStackInSlot(slot, stack.isEmpty() ? ItemStack.EMPTY : stack);
             }
-            if (powerProvider.getEnergyStored() <= workEnergy) {
+            boolean progressed = cursor.acted || !Arrays.equals(before, cursor.progressKey());
+            if (!finished && !progressed) {
                 return;
             }
+            powerProvider.useEnergy(workEnergy, workEnergy, true);
+            done = finished;
         }
     }
 
@@ -380,6 +395,7 @@ public class FillerBlockEntity extends PoweredBlockEntity implements IMachine, I
     }
 
     @Nullable
+    @Override
     public BoundingBox getBox() {
         return box;
     }

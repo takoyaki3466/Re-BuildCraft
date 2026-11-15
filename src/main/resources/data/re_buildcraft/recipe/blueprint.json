@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ppp",
+    "pip",
+    "ppp"
+  ],
+  "key": {
+    "i": {
+      "item": "minecraft:lapis_lazuli"
+    },
+    "p": {
+      "item": "minecraft:paper"
+    }
+  },
+  "result": {
+    "id": "re_buildcraft:blueprint",
+    "count": 1
+  }
+}

@@ -7,7 +7,9 @@ import com.takoy3466.re_buildcraft.transport.gate.Gate;
 import com.takoy3466.re_buildcraft.transport.gate.GateKind;
 import com.takoy3466.re_buildcraft.transport.gate.GateMenu;
 import com.takoy3466.re_buildcraft.transport.gate.WireColor;
+
 import java.util.Map;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -18,6 +20,7 @@ import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -48,21 +51,24 @@ public class PipeBlock extends Block implements EntityBlock {
     private static final String GATE_TITLE_KEY = "container.re_buildcraft.gate";
     private static final int REDSTONE_SIGNAL = 15;
 
-    private final PipeType pipeType;
+    private final PipeSpec pipeType;
     private final Map<BlockState, VoxelShape> shapes;
 
-    public PipeBlock(Properties properties, PipeType pipeType) {
+    public PipeBlock(Properties properties, PipeSpec pipeType) {
         super(properties);
         this.pipeType = pipeType;
         BlockState state = stateDefinition.any();
+
         for (Direction direction : Direction.values()) {
             state = state.setValue(PipeConnections.property(direction), false);
         }
+
         registerDefaultState(state);
+
         this.shapes = ConnectedShapes.forAllStates(stateDefinition.getPossibleStates());
     }
 
-    public PipeType getPipeType() {
+    public PipeSpec getPipeType() {
         return pipeType;
     }
 
@@ -83,39 +89,40 @@ public class PipeBlock extends Block implements EntityBlock {
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         BlockState state = defaultBlockState();
+
         for (Direction direction : Direction.values()) {
-            state = state.setValue(PipeConnections.property(direction),
-                    PipeConnectionRules.canConnect(context.getLevel(), context.getClickedPos(), direction, pipeType));
+            state = state.setValue(PipeConnections.property(direction), PipeConnectionRules.canConnect(context.getLevel(), context.getClickedPos(), direction, pipeType));
         }
+
         return state;
     }
 
     @Override
-    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level,
-                                     BlockPos pos, BlockPos neighborPos) {
+    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
         if (level instanceof Level realLevel) {
-            return state.setValue(PipeConnections.property(direction),
-                    PipeConnectionRules.canConnect(realLevel, pos, direction, pipeType));
+            return state.setValue(PipeConnections.property(direction), PipeConnectionRules.canConnect(realLevel, pos, direction, pipeType));
         }
         return state;
     }
 
     @Override
-    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos,
-                                   boolean movedByPiston) {
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
         if (level.isClientSide) {
             return;
         }
+
         // ブロックエンティティの追加・削除はブロックの形状更新を伴わないことがあるため、ここでも接続を取り直す。
         BlockState updated = state;
+
         for (Direction direction : Direction.values()) {
-            updated = updated.setValue(PipeConnections.property(direction),
-                    PipeConnectionRules.canConnect(level, pos, direction, pipeType));
+            updated = updated.setValue(PipeConnections.property(direction), PipeConnectionRules.canConnect(level, pos, direction, pipeType));
         }
+
         if (updated != state) {
             level.setBlock(pos, updated, Block.UPDATE_ALL);
         }
+
         if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipe) {
             pipe.onNeighborChanged();
         }
@@ -140,6 +147,15 @@ public class PipeBlock extends Block implements EntityBlock {
     }
 
     @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+
+        if (placer != null && level.getBlockEntity(pos) instanceof PipeBlockEntity pipe) {
+            pipe.behavior().onPlaced(pipe, placer);
+        }
+    }
+
+    @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof PipeBlockEntity pipe) {
             pipe.dropContents();
@@ -157,23 +173,25 @@ public class PipeBlock extends Block implements EntityBlock {
     // ---- 右クリック -------------------------------------------------------------
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
-                                              InteractionHand hand, BlockHitResult hitResult) {
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         // パイプを持っていれば、パイプに向けて別のパイプを置けるようにする。
         if (!(level.getBlockEntity(pos) instanceof PipeBlockEntity pipe) || stack.getItem() instanceof BlockItem blockItem && blockItem.getBlock() instanceof PipeBlock) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
+
         boolean wrench = stack.is(BuildCraftTags.WRENCHES);
+
         if (player.isShiftKeyDown() && !wrench) {
-            return removeGateAndWires(level, pos, pipe) ? ItemInteractionResult.sidedSuccess(level.isClientSide)
-                    : ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return removeGateAndWires(level, pos, pipe) ? ItemInteractionResult.sidedSuccess(level.isClientSide) : ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
+
         if (wrench) {
             if (!level.isClientSide) {
-                pipe.behavior().onWrench(pipe);
+                pipe.behavior().onWrench(pipe, player);
             }
             return ItemInteractionResult.sidedSuccess(level.isClientSide);
         }
+
         for (WireColor color : WireColor.values()) {
             if (stack.is(color.item())) {
                 if (pipe.signals().hasWire(color)) {
@@ -188,7 +206,9 @@ public class PipeBlock extends Block implements EntityBlock {
                 return ItemInteractionResult.sidedSuccess(level.isClientSide);
             }
         }
+
         GateKind gateKind = GateKind.byItem(stack.getItem());
+
         if (gateKind != null && pipe.getGate() == null) {
             if (!level.isClientSide) {
                 pipe.setGate(new Gate(gateKind));
@@ -196,6 +216,7 @@ public class PipeBlock extends Block implements EntityBlock {
             }
             return ItemInteractionResult.sidedSuccess(level.isClientSide);
         }
+
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
@@ -204,36 +225,45 @@ public class PipeBlock extends Block implements EntityBlock {
         if (!(level.getBlockEntity(pos) instanceof PipeBlockEntity pipe)) {
             return InteractionResult.PASS;
         }
+
         if (player.isShiftKeyDown()) {
             return removeGateAndWires(level, pos, pipe) ? InteractionResult.sidedSuccess(level.isClientSide) : InteractionResult.PASS;
         }
-        MenuProvider menu = pipe.getGate() != null
-                ? new SimpleMenuProvider((id, inventory, menuPlayer) -> new GateMenu(id, inventory, pipe), Component.translatable(GATE_TITLE_KEY))
-                : pipe.behavior().menuProvider(pipe);
+
+        MenuProvider menu = pipe.getGate() != null ? new SimpleMenuProvider((id, inventory, menuPlayer) -> new GateMenu(id, inventory, pipe), Component.translatable(GATE_TITLE_KEY)) : pipe.behavior().menuProvider(pipe);
+
         if (menu == null) {
             return InteractionResult.PASS;
         }
+
         if (player instanceof ServerPlayer serverPlayer) {
             serverPlayer.openMenu(menu, pos);
         }
+
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    /** ゲートとワイヤーを外して落とす (旧 Pipe.onGateRemoval)。 */
+    /**
+     * ゲートとワイヤーを外して落とす (旧 Pipe.onGateRemoval)。
+     */
     private static boolean removeGateAndWires(Level level, BlockPos pos, PipeBlockEntity pipe) {
         if (pipe.getGate() == null && !pipe.signals().hasAnyWire()) {
             return false;
         }
+
         if (!level.isClientSide) {
             pipe.signals().dropWires(level, pos);
+
             for (WireColor color : WireColor.values()) {
                 pipe.signals().setWire(color, false);
             }
             Gate gate = pipe.getGate();
+
             if (gate != null) {
                 Block.popResource(level, pos, gate.kind().toItemStack());
                 pipe.setGate(null);
             }
+
             level.updateNeighborsAt(pos, pipe.getBlockState().getBlock());
             pipe.scheduleSync();
         }
@@ -249,15 +279,35 @@ public class PipeBlock extends Block implements EntityBlock {
 
     /**
      * ゲートがレッドストーン出力中なら、接続しているパイプ以外の方向へ信号を出す (旧 Pipe.isPoweringTo)。
+     * 素材自身が信号を出す場合 (PipeBehavior#redstoneSignal) は大きい方を使う。
      */
     @Override
     protected int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
-        if (!(level.getBlockEntity(pos) instanceof PipeBlockEntity pipe) || pipe.getGate() == null
-                || !pipe.getGate().isBroadcastingRedstone()) {
+        if (!(level.getBlockEntity(pos) instanceof PipeBlockEntity pipe)) {
             return 0;
         }
+        return Math.max(gateSignal(level, pos, pipe, direction), pipe.behavior().redstoneSignal(pipe, direction));
+    }
+
+    /**
+     * 素材が出す強い信号 (PipeBehavior#directRedstoneSignal)。ゲートの信号は弱い信号のみ。
+     */
+    @Override
+    protected int getDirectSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
+        if (!(level.getBlockEntity(pos) instanceof PipeBlockEntity pipe)) {
+            return 0;
+        }
+        return pipe.behavior().directRedstoneSignal(pipe, direction);
+    }
+
+    private static int gateSignal(BlockGetter level, BlockPos pos, PipeBlockEntity pipe, Direction direction) {
+        if (pipe.getGate() == null || !pipe.getGate().isBroadcastingRedstone()) {
+            return 0;
+        }
+
         Direction toward = direction.getOpposite();
         boolean pipeThere = level.getBlockEntity(pos.relative(toward)) instanceof PipeBlockEntity && pipe.isConnected(toward);
+
         return pipeThere ? 0 : REDSTONE_SIGNAL;
     }
 }
